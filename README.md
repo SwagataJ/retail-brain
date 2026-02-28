@@ -1,0 +1,100 @@
+# Retail Brain
+
+AI-powered decision-making platform for retail and marketplace teams.
+
+## Overview
+
+Retail Brain unifies demand forecasting, customer intelligence, pricing optimization, and natural language interaction into a single system. It processes sales transactions, customer behavior, and market signals through specialized ML pipelines to generate actionable retail insights.
+
+**Current status:** Synthetic data generation and sales forecasting (NBEATSx) are implemented and working. Customer intelligence, pricing optimization, and the AI copilot interface are on the roadmap.
+
+## Project Structure
+
+```
+retail-brain/
+├── scripts/
+│   ├── generate_data.py       # Synthetic data generator (6 CSVs)
+│   ├── train_forecast.py      # NBEATSx training & validation pipeline
+│   └── predict_forecast.py    # 30-day forecast generation
+├── data/
+│   ├── products.csv           # ~2,000 products across 5 categories
+│   ├── stores.csv             # ~100 stores (mall, standalone, online)
+│   ├── promotions.csv         # ~50 promotions
+│   ├── customers.csv          # ~100,000 customers (4 segments)
+│   ├── transactions.csv       # ~500,000 transactions over 2 years
+│   ├── transaction_items.csv  # ~1,200,000 line items
+│   ├── daily_sales.csv        # Aggregated daily revenue by category
+│   └── forecasts/             # Forecast outputs & evaluation plots
+├── models/
+│   └── nbeats_model/          # Saved NBEATSx production model
+├── design.md                  # System architecture & design document
+├── requirements.md            # Detailed requirements & acceptance criteria
+└── LICENSE                    # Apache 2.0
+```
+
+## Quick Start
+
+```bash
+# Clone the repo
+git clone https://github.com/SwagataJ/retail-brain.git
+cd retail-brain
+
+# Create and activate virtual environment
+python3 -m venv retail_brain_env
+source retail_brain_env/bin/activate
+
+# Install dependencies
+pip install numpy pandas faker matplotlib neuralforecast
+
+# 1. Generate synthetic data (~2M rows across 6 CSVs)
+python scripts/generate_data.py
+
+# 2. Train the forecasting model
+python scripts/train_forecast.py
+
+# 3. Generate 30-day predictions
+python scripts/predict_forecast.py
+```
+
+## Sales Forecasting
+
+The forecasting pipeline uses **NBEATSx** (Neural Basis Expansion Analysis with exogenous variables) via the [neuralforecast](https://github.com/Nixtla/neuralforecast) library.
+
+**Model configuration:**
+- Architecture: identity + trend + seasonality stacks, each with 512-unit MLP blocks
+- Input window: 60 days, forecast horizon: 30 days
+- Exogenous features: day-of-week (cyclical), month (cyclical), weekend flag, active promotion count
+- Training: MAE loss, early stopping (patience 50), 1000 max steps
+
+**Categories forecasted:** Beauty, Clothing, Electronics, Groceries, Home
+
+**Validation results** (Oct 2025 holdout):
+
+| Category | MAE | RMSE | MAPE |
+|----------|-----|------|------|
+| Beauty | $20,664 | $23,369 | 15.6% |
+| Clothing | $22,454 | $27,182 | 10.4% |
+| Electronics | $310,095 | $342,944 | 19.4% |
+| Groceries | $3,691 | $4,222 | 11.4% |
+| Home | $64,689 | $71,297 | 16.7% |
+| **Overall** | **$84,319** | **$157,478** | **14.7%** |
+
+**Embedded data patterns** the model captures:
+- Seasonality (Nov-Dec spike, Jan-Feb dip)
+- Weekend sales uplift
+- Promotion-driven demand with category-level price elasticity
+- Upward trend in online channel sales
+
+## Roadmap
+
+| Module | Description | Status |
+|--------|-------------|--------|
+| Data Generation | Synthetic retail dataset with realistic patterns | Done |
+| Sales Forecasting | NBEATSx 30-day revenue forecasting by category | Done |
+| Customer Intelligence | Segmentation, churn prediction, re-engagement targeting | Planned |
+| Pricing Optimization | Price elasticity modeling, promotion ROI, markdown optimization | Planned |
+| AI Copilot | Natural language interface for business users | Planned |
+
+## License
+
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.

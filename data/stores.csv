@@ -1,0 +1,101 @@
+store_id,store_name,city,store_type
+1,ShopEasy Dallas #1,Dallas,online
+2,DailyNeeds Phoenix #2,Phoenix,online
+3,CityCenter San Antonio #3,San Antonio,online
+4,PrimeMall Boston #4,Boston,mall
+5,PrimeMall Seattle #5,Seattle,online
+6,PrimeMall San Jose #6,San Jose,online
+7,DailyNeeds Houston #7,Houston,standalone
+8,ValueHub Austin #8,Austin,standalone
+9,TrendZone Indianapolis #9,Indianapolis,mall
+10,ValueHub Columbus #10,Columbus,standalone
+11,ShopEasy San Diego #11,San Diego,mall
+12,CityCenter Denver #12,Denver,standalone
+13,ValueHub Chicago #13,Chicago,standalone
+14,PrimeMall New York #14,New York,online
+15,TrendZone San Antonio #15,San Antonio,online
+16,QuickStop Austin #16,Austin,mall
+17,CityCenter Indianapolis #17,Indianapolis,standalone
+18,TrendZone Denver #18,Denver,online
+19,QuickStop Houston #19,Houston,mall
+20,ShopEasy Philadelphia #20,Philadelphia,mall
+21,DailyNeeds Nashville #21,Nashville,standalone
+22,MegaMart San Jose #22,San Jose,standalone
+23,FreshMarket Phoenix #23,Phoenix,mall
+24,FreshMarket Seattle #24,Seattle,standalone
+25,DailyNeeds Boston #25,Boston,online
+26,ValueHub Nashville #26,Nashville,standalone
+27,QuickStop Charlotte #27,Charlotte,mall
+28,FreshMarket Los Angeles #28,Los Angeles,standalone
+29,ValueHub Nashville #29,Nashville,standalone
+30,MegaMart Chicago #30,Chicago,standalone
+31,CityCenter San Diego #31,San Diego,online
+32,FreshMarket Fort Worth #32,Fort Worth,mall
+33,SmartBuy Fort Worth #33,Fort Worth,online
+34,FreshMarket Los Angeles #34,Los Angeles,online
+35,FreshMarket Philadelphia #35,Philadelphia,standalone
+36,TrendZone Jacksonville #36,Jacksonville,mall
+37,PrimeMall Boston #37,Boston,standalone
+38,QuickStop Austin #38,Austin,mall
+39,SmartBuy Fort Worth #39,Fort Worth,standalone
+40,TrendZone Houston #40,Houston,standalone
+41,CityCenter Denver #41,Denver,mall
+42,PrimeMall Houston #42,Houston,mall
+43,DailyNeeds Seattle #43,Seattle,mall
+44,TrendZone Jacksonville #44,Jacksonville,standalone
+45,QuickStop Seattle #45,Seattle,online
+46,MegaMart Charlotte #46,Charlotte,standalone
+47,PrimeMall Nashville #47,Nashville,online
+48,TrendZone Columbus #48,Columbus,online
+49,FreshMarket Boston #49,Boston,standalone
+50,ShopEasy Seattle #50,Seattle,mall
+51,SmartBuy Chicago #51,Chicago,standalone
+52,TrendZone San Diego #52,San Diego,mall
+53,ValueHub Philadelphia #53,Philadelphia,online
+54,ShopEasy Fort Worth #54,Fort Worth,online
+55,ValueHub Los Angeles #55,Los Angeles,standalone
+56,FreshMarket San Diego #56,San Diego,mall
+57,DailyNeeds Los Angeles #57,Los Angeles,standalone
+58,TrendZone Philadelphia #58,Philadelphia,standalone
+59,PrimeMall Nashville #59,Nashville,standalone
+60,FreshMarket Boston #60,Boston,online
+61,ValueHub Dallas #61,Dallas,online
+62,ShopEasy San Antonio #62,San Antonio,mall
+63,CityCenter Columbus #63,Columbus,mall
+64,DailyNeeds New York #64,New York,mall
+65,ValueHub Austin #65,Austin,online
+66,ShopEasy Dallas #66,Dallas,standalone
+67,ValueHub Dallas #67,Dallas,online
+68,CityCenter Charlotte #68,Charlotte,standalone
+69,PrimeMall San Antonio #69,San Antonio,online
+70,CityCenter Nashville #70,Nashville,mall
+71,FreshMarket Fort Worth #71,Fort Worth,online
+72,QuickStop Phoenix #72,Phoenix,mall
+73,CityCenter Seattle #73,Seattle,online
+74,CityCenter Denver #74,Denver,online
+75,TrendZone Charlotte #75,Charlotte,mall
+76,FreshMarket Houston #76,Houston,standalone
+77,ShopEasy New York #77,New York,mall
+78,MegaMart New York #78,New York,online
+79,CityCenter Columbus #79,Columbus,mall
+80,FreshMarket San Jose #80,San Jose,mall
+81,DailyNeeds New York #81,New York,standalone
+82,ShopEasy Dallas #82,Dallas,standalone
+83,SmartBuy San Diego #83,San Diego,standalone
+84,SmartBuy Chicago #84,Chicago,standalone
+85,CityCenter Denver #85,Denver,online
+86,CityCenter Charlotte #86,Charlotte,standalone
+87,QuickStop Fort Worth #87,Fort Worth,standalone
+88,CityCenter Columbus #88,Columbus,mall
+89,PrimeMall Austin #89,Austin,online
+90,FreshMarket Austin #90,Austin,online
+91,TrendZone Fort Worth #91,Fort Worth,standalone
+92,TrendZone Chicago #92,Chicago,mall
+93,TrendZone Charlotte #93,Charlotte,online
+94,ValueHub Houston #94,Houston,online
+95,ShopEasy Charlotte #95,Charlotte,mall
+96,FreshMarket Philadelphia #96,Philadelphia,online
+97,TrendZone Boston #97,Boston,mall
+98,CityCenter Seattle #98,Seattle,mall
+99,ValueHub Columbus #99,Columbus,standalone
+100,TrendZone Houston #100,Houston,standalone

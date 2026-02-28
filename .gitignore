@@ -1,0 +1,21 @@
+# Virtual environment
+retail_brain_env/
+
+# PyTorch / training logs
+lightning_logs/
+
+# Model checkpoints (large binary files)
+models/
+
+# OS files
+.DS_Store
+
+# Large generated data (keep scripts to regenerate)
+data/customers.csv
+data/transactions.csv
+data/transaction_items.csv
+data/daily_sales.csv
+
+# Python
+__pycache__/
+*.pyc

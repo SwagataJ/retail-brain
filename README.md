@@ -6,7 +6,7 @@ AI-powered decision-making platform for retail and marketplace teams.
 
 Retail Brain unifies demand forecasting, customer intelligence, pricing optimization, and natural language interaction into a single system. It processes sales transactions, customer behavior, and market signals through specialized ML pipelines to generate actionable retail insights.
 
-**Current status:** Synthetic data generation, sales forecasting (NBEATSx), and customer intelligence (segmentation, churn prediction, re-engagement) are implemented and working. Pricing optimization and the AI copilot interface are on the roadmap.
+**Current status:** Synthetic data generation, sales forecasting (NBEATSx), customer intelligence (segmentation, churn prediction, re-engagement), and pricing optimization (elasticity, discount optimization, promotion timing) are implemented and working. The AI copilot interface is on the roadmap.
 
 ## Project Structure
 
@@ -16,7 +16,8 @@ retail-brain/
 │   ├── generate_data.py       # Synthetic data generator (6 CSVs)
 │   ├── train_forecast.py      # NBEATSx training & validation pipeline
 │   ├── predict_forecast.py    # 30-day forecast generation
-│   └── customer_intelligence.py  # Segmentation, churn & recommendations
+│   ├── customer_intelligence.py  # Segmentation, churn & recommendations
+│   └── pricing_optimization.py   # Elasticity, discount & promotion timing
 ├── data/
 │   ├── products.csv           # ~2,000 products across 5 categories
 │   ├── stores.csv             # ~100 stores (mall, standalone, online)
@@ -26,7 +27,8 @@ retail-brain/
 │   ├── transaction_items.csv  # ~1,200,000 line items
 │   ├── daily_sales.csv        # Aggregated daily revenue by category
 │   ├── forecasts/             # Forecast outputs & evaluation plots
-│   └── customer_intelligence/ # Segmentation & churn outputs (CSVs + PNGs)
+│   ├── customer_intelligence/ # Segmentation & churn outputs (CSVs + PNGs)
+│   └── pricing_optimization/  # Elasticity & discount outputs (CSVs + PNGs)
 ├── models/
 │   └── nbeats_model/          # Saved NBEATSx production model
 ├── requirements.txt             # Python dependencies
@@ -58,6 +60,9 @@ python scripts/predict_forecast.py
 
 # 3. Run customer intelligence pipeline
 python scripts/customer_intelligence.py
+
+# 4. Run pricing optimization pipeline
+python scripts/pricing_optimization.py
 ```
 
 ## Dataset
@@ -150,6 +155,38 @@ python scripts/customer_intelligence.py
 | `churn_feature_importance.png` | Random Forest feature importances |
 | `category_affinity_heatmap.png` | Segment x category heatmap |
 
+## Pricing Optimization
+
+The pricing optimization pipeline (`scripts/pricing_optimization.py`) estimates price elasticity, analyzes discount sensitivity, optimizes discount depth, identifies promotion timing windows, and assesses cannibalization risk.
+
+```bash
+python scripts/pricing_optimization.py
+```
+
+**Pipeline steps:**
+
+1. **Price Elasticity** — Per-product arc elasticity comparing avg quantity at zero vs highest observed discount; category-level OLS log-log regression as fallback for products with insufficient discount variation
+2. **Discount Sensitivity** — Per-item profit response at each discount level per category, with uplift indices relative to zero-discount baseline
+3. **Optimal Discount Depth** — Profit-maximizing discount per product via `scipy.optimize.minimize_scalar`, with 2% minimum margin floor and 40% discount cap
+4. **Promotion Timing** — Monthly demand index per category (100 = average); low-demand months scored as promotion opportunities, high-demand months flagged to avoid
+5. **Cannibalization Risk** — Compares non-promoted same-category product sales during vs before promotions to detect cross-product cannibalization
+
+**Outputs** (in `data/pricing_optimization/`):
+
+| File | Description |
+|------|-------------|
+| `price_elasticity.csv` | Per-product elasticity with category, margin, and sensitivity label |
+| `discount_sensitivity.csv` | Profit index and qty uplift at each discount level per category |
+| `optimal_discounts.csv` | Per-product optimal discount with profit/revenue uplift |
+| `promotion_timing.csv` | Monthly demand index and promotion window scoring per category |
+| `cannibalization_risk.csv` | Category/subcategory cannibalization risk assessment |
+| `margin_impact_summary.csv` | Per-category margin impact summary |
+| `elasticity_by_category.png` | Box plot of elasticity distribution per category |
+| `discount_response_curves.png` | Profit index vs discount depth per category |
+| `optimal_discount_scatter.png` | Optimal discount vs profit uplift per product |
+| `demand_seasonality_heatmap.png` | Category x month demand index heatmap |
+| `cannibalization_network.png` | Cannibalization % by category/subcategory |
+
 ## Roadmap
 
 | Module | Description | Status |
@@ -157,7 +194,7 @@ python scripts/customer_intelligence.py
 | Data Generation | Synthetic retail dataset with realistic patterns | Done |
 | Sales Forecasting | NBEATSx 30-day revenue forecasting by category | Done |
 | Customer Intelligence | Segmentation, churn prediction, re-engagement targeting | Done |
-| Pricing Optimization | Price elasticity modeling, promotion ROI, markdown optimization | Planned |
+| Pricing Optimization | Price elasticity, discount optimization, promotion timing | Done |
 | AI Copilot | Natural language interface for business users | Planned |
 
 ## License

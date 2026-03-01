@@ -1,13 +1,13 @@
 """
 Retail Brain — Customer Intelligence Pipeline
 
-Generates customer segmentation, churn predictions, category affinity analysis,
-and re-engagement recommendations from transaction data.
+Generates K-Means customer segmentation, churn predictions, category affinity
+analysis, and re-engagement recommendations from transaction data.
 
 Outputs (in data/customer_intelligence/):
   CSVs:  rfm_scores.csv, segment_summary.csv, category_affinity.csv,
          churn_predictions.csv, recommendations.csv
-  PNGs:  segment_distribution.png, rfm_heatmap.png,
+  PNGs:  cluster_selection.png, segment_distribution.png, rfm_heatmap.png,
          churn_feature_importance.png, category_affinity_heatmap.png
 
 Usage:
@@ -23,9 +23,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score, silhouette_score
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -115,10 +117,8 @@ def compute_rfm(customers, transactions):
 # ── Step 3: Behavioral Segments ──────────────────────────────────────────────
 
 def assign_segments(rfm, transactions, customers):
-    """Assign mutually exclusive behavioral segments in priority order."""
-    print("\nAssigning behavioral segments...")
-
-    abv_75th = rfm.loc[rfm["abv"] > 0, "abv"].quantile(0.75)
+    """Assign data-driven segments via K-Means clustering on behavioral features."""
+    print("\nAssigning behavioral segments (K-Means)...")
 
     # H1 vs H2 frequency per customer
     h1_freq = transactions[
@@ -135,32 +135,110 @@ def assign_segments(rfm, transactions, customers):
     rfm["h2_freq"] = rfm["h2_freq"].fillna(0).astype(int)
 
     # Tenure in days
-    signup_lookup = customers.set_index("customer_id")["signup_date"]
     rfm = rfm.merge(
         customers[["customer_id", "signup_date"]], on="customer_id", how="left"
     )
     rfm["tenure_days"] = (REFERENCE_DATE - rfm["signup_date"]).dt.days
 
-    # Assign segments in priority order
-    conditions = [
-        # 1. High-Value Lapsed: top 25% ABV + 180+ days inactive
-        (rfm["abv"] >= abv_75th) & (rfm["recency"] >= 180),
-        # 2. At-Risk: H1→H2 frequency declined 50%+
-        (rfm["h1_freq"] > 0) & (rfm["h2_freq"] <= rfm["h1_freq"] * 0.5),
-        # 3. New: first purchase within 30 days of reference date
-        (rfm["recency"] <= 30) & (rfm["tenure_days"] <= 30),
-        # 4. Loyal: 5+ purchases
-        rfm["frequency"] >= 5,
-        # 5. Repeat: 2-5 purchases, active within 90 days
-        (rfm["frequency"].between(2, 5)) & (rfm["recency"] <= 90),
-    ]
-    choices = ["High-Value Lapsed", "At-Risk", "New", "Loyal", "Repeat"]
+    # Frequency trend
+    rfm["freq_trend"] = rfm["h2_freq"] - rfm["h1_freq"]
 
-    rfm["segment"] = np.select(conditions, choices, default="Inactive")
+    # ── Clustering features ──────────────────────────────────────────────────
+    cluster_features = [
+        "r_score", "f_score", "m_score", "abv",
+        "tenure_days", "h1_freq", "h2_freq", "freq_trend",
+    ]
+    X_raw = rfm[cluster_features].fillna(0).copy()
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_raw)
+
+    # ── Optimal k selection (k=2..15) ────────────────────────────────────────
+    K_RANGE = range(2, 16)
+    inertias = []
+    silhouette_scores = []
+
+    print("  Evaluating k=2..15:")
+    for k in K_RANGE:
+        km = KMeans(n_clusters=k, random_state=SEED, n_init=10)
+        labels = km.fit_predict(X_scaled)
+        inertias.append(km.inertia_)
+        sil = silhouette_score(X_scaled, labels)
+        silhouette_scores.append(sil)
+        print(f"    k={k:>2}  silhouette={sil:.4f}  inertia={km.inertia_:,.0f}")
+
+    optimal_k = list(K_RANGE)[np.argmax(silhouette_scores)]
+    print(f"\n  Optimal k = {optimal_k} (silhouette = "
+          f"{max(silhouette_scores):.4f})")
+
+    # Save selection data for plotting
+    rfm.attrs["cluster_selection"] = {
+        "k_range": list(K_RANGE),
+        "inertias": inertias,
+        "silhouette_scores": silhouette_scores,
+        "optimal_k": optimal_k,
+    }
+
+    # ── Final K-Means with optimal k ─────────────────────────────────────────
+    km_final = KMeans(n_clusters=optimal_k, random_state=SEED, n_init=10)
+    rfm["cluster"] = km_final.fit_predict(X_scaled)
+
+    # ── Auto-label clusters based on centroid characteristics ─────────────────
+    centroids = pd.DataFrame(
+        scaler.inverse_transform(km_final.cluster_centers_),
+        columns=cluster_features,
+    )
+    print("\n  Cluster centroids (original scale):")
+    print(centroids.to_string(float_format=lambda x: f"{x:.2f}").replace(
+        "\n", "\n    "
+    ))
+
+    cluster_labels = {}
+    for c in range(optimal_k):
+        row = centroids.iloc[c]
+        med_recency = centroids["r_score"].median()
+        med_freq = centroids["f_score"].median()
+        med_monetary = centroids["m_score"].median()
+        med_abv = centroids["abv"].median()
+        med_tenure = centroids["tenure_days"].median()
+        med_trend = centroids["freq_trend"].median()
+
+        high_recency = row["r_score"] < med_recency   # low r_score = high recency (days)
+        high_freq = row["f_score"] > med_freq
+        high_monetary = row["m_score"] > med_monetary
+        high_abv = row["abv"] > med_abv
+        short_tenure = row["tenure_days"] < med_tenure
+        declining = row["freq_trend"] < med_trend
+
+        if high_recency and high_abv:
+            label = "High-Value Lapsed"
+        elif high_freq and not high_recency:
+            label = "Loyal"
+        elif declining and not high_recency:
+            label = "At-Risk"
+        elif not high_recency and short_tenure:
+            label = "New"
+        elif not high_recency and not high_freq:
+            label = "Nurture"
+        elif high_recency and not high_abv:
+            label = "Inactive"
+        else:
+            label = f"Cluster-{c}"
+
+        # Deduplicate labels by appending cluster number if needed
+        if label in cluster_labels.values():
+            label = f"{label}-{c}"
+        cluster_labels[c] = label
+
+    rfm["segment"] = rfm["cluster"].map(cluster_labels)
+
+    print("\n  Cluster labels:")
+    for c, label in sorted(cluster_labels.items()):
+        count = (rfm["cluster"] == c).sum()
+        print(f"    Cluster {c} → {label:<22} ({count:>7,} customers)")
 
     # Print segment distribution
     seg_counts = rfm["segment"].value_counts()
-    print("  Segment distribution:")
+    print("\n  Segment distribution:")
     for seg, count in seg_counts.items():
         print(f"    {seg:<22} {count:>7,}  ({count / len(rfm) * 100:.1f}%)")
 
@@ -276,58 +354,78 @@ def compute_category_affinity(rfm, transactions, items, products):
 
 # ── Step 6: Recommendations ─────────────────────────────────────────────────
 
-def generate_recommendations(affinity_pivot):
-    """Generate per-segment timing and action recommendations."""
+def generate_recommendations(rfm, affinity_pivot):
+    """Generate per-segment timing and action recommendations dynamically."""
     print("\nGenerating re-engagement recommendations...")
 
-    recs = {
-        "New": {
-            "timing": "Within 7 days of first purchase",
-            "action_template": "Welcome offer: 10-15% discount on {top_cat}; "
-                               "onboarding email series",
-        },
-        "Repeat": {
-            "timing": "Every 21-30 days",
-            "action_template": "Loyalty enrollment; bundle offers on "
-                               "{top_cat} + {second_cat}",
-        },
-        "Loyal": {
-            "timing": "Bi-weekly touchpoint",
-            "action_template": "VIP early access to {top_cat}; "
-                               "referral program; exclusive previews",
-        },
-        "High-Value Lapsed": {
-            "timing": "Immediate (within 7 days)",
-            "action_template": "20-25% win-back discount on {top_cat}; "
-                               "personal outreach",
-        },
-        "At-Risk": {
-            "timing": "Within 14 days",
-            "action_template": "15% retention offer on {top_cat}; "
-                               "feedback survey; personalized {second_cat} picks",
-        },
-        "Inactive": {
-            "timing": "Quarterly batch",
-            "action_template": "Low-cost seasonal email featuring {top_cat}; "
-                               "re-activation coupon",
-        },
+    # Compute per-segment averages to drive recommendation logic
+    seg_stats = rfm.groupby("segment").agg(
+        avg_recency=("recency", "mean"),
+        avg_frequency=("frequency", "mean"),
+        avg_abv=("abv", "mean"),
+        avg_tenure=("tenure_days", "mean"),
+        avg_freq_trend=("freq_trend", "mean"),
+    )
+
+    global_medians = {
+        "recency": rfm["recency"].median(),
+        "frequency": rfm["frequency"].median(),
+        "abv": rfm["abv"].median(),
+        "tenure": rfm["tenure_days"].median(),
     }
 
     rows = []
-    for segment, cfg in recs.items():
-        if segment in affinity_pivot.index:
-            sorted_cats = affinity_pivot.loc[segment].sort_values(ascending=False)
-            top_cat = sorted_cats.index[0]
-            second_cat = sorted_cats.index[1] if len(sorted_cats) > 1 else top_cat
-        else:
-            top_cat, second_cat = "top category", "second category"
+    for segment in affinity_pivot.index:
+        sorted_cats = affinity_pivot.loc[segment].sort_values(ascending=False)
+        top_cat = sorted_cats.index[0]
+        second_cat = sorted_cats.index[1] if len(sorted_cats) > 1 else top_cat
 
-        action = cfg["action_template"].format(
-            top_cat=top_cat, second_cat=second_cat
-        )
+        stats = seg_stats.loc[segment]
+        high_recency = stats["avg_recency"] > global_medians["recency"]
+        high_freq = stats["avg_frequency"] > global_medians["frequency"]
+        high_abv = stats["avg_abv"] > global_medians["abv"]
+        short_tenure = stats["avg_tenure"] < global_medians["tenure"]
+        declining = stats["avg_freq_trend"] < 0
+
+        # Determine timing and action based on cluster characteristics
+        if high_recency and high_abv:
+            # High-value lapsed → aggressive win-back
+            timing = "Immediate (within 7 days)"
+            action = (f"20-25% win-back discount on {top_cat}; "
+                      f"personal outreach; {second_cat} recommendations")
+        elif high_freq and not high_recency:
+            # Loyal / active frequent buyers → VIP treatment
+            timing = "Bi-weekly touchpoint"
+            action = (f"VIP early access to {top_cat}; "
+                      f"referral program; exclusive {second_cat} previews")
+        elif declining:
+            # Declining frequency → retention offers
+            timing = "Within 14 days"
+            action = (f"15% retention offer on {top_cat}; "
+                      f"feedback survey; personalized {second_cat} picks")
+        elif not high_recency and short_tenure:
+            # New / recent with short tenure → onboarding
+            timing = "Within 7 days of first purchase"
+            action = (f"Welcome offer: 10-15% discount on {top_cat}; "
+                      f"onboarding email series")
+        elif not high_recency and not high_freq:
+            # Low frequency, still active → nurture / enrollment
+            timing = "Every 21-30 days"
+            action = (f"Loyalty enrollment; bundle offers on "
+                      f"{top_cat} + {second_cat}")
+        elif high_recency and not high_abv:
+            # Inactive / low value lapsed → low-cost re-activation
+            timing = "Quarterly batch"
+            action = (f"Low-cost seasonal email featuring {top_cat}; "
+                      f"re-activation coupon")
+        else:
+            timing = "Monthly"
+            action = (f"Cross-sell {second_cat} to {top_cat} buyers; "
+                      f"engagement campaign")
+
         rows.append({
             "segment": segment,
-            "recommended_timing": cfg["timing"],
+            "recommended_timing": timing,
             "recommended_action": action,
             "top_affinity_category": top_cat,
         })
@@ -343,6 +441,49 @@ def generate_recommendations(affinity_pivot):
 
 
 # ── Visualizations ──────────────────────────────────────────────────────────
+
+def plot_cluster_selection(rfm):
+    """Dual-axis plot of elbow (inertia) and silhouette score for k selection."""
+    sel = rfm.attrs["cluster_selection"]
+    k_range = sel["k_range"]
+    inertias = sel["inertias"]
+    sil_scores = sel["silhouette_scores"]
+    optimal_k = sel["optimal_k"]
+
+    fig, ax1 = plt.subplots(figsize=(10, 5))
+
+    # Elbow curve (inertia) on left axis
+    color1 = "#3498db"
+    ax1.plot(k_range, inertias, "o-", color=color1, label="Inertia (elbow)")
+    ax1.set_xlabel("Number of Clusters (k)")
+    ax1.set_ylabel("Inertia", color=color1)
+    ax1.tick_params(axis="y", labelcolor=color1)
+
+    # Silhouette score on right axis
+    ax2 = ax1.twinx()
+    color2 = "#e74c3c"
+    ax2.plot(k_range, sil_scores, "s-", color=color2, label="Silhouette Score")
+    ax2.set_ylabel("Silhouette Score", color=color2)
+    ax2.tick_params(axis="y", labelcolor=color2)
+
+    # Mark optimal k
+    ax2.axvline(x=optimal_k, color="#2ecc71", linestyle="--", linewidth=1.5,
+                label=f"Optimal k = {optimal_k}")
+
+    # Combined legend
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="center right")
+
+    ax1.set_title("K-Means Cluster Selection — Elbow & Silhouette Analysis")
+    ax1.set_xticks(k_range)
+    fig.tight_layout()
+
+    path = os.path.join(OUTPUT_DIR, "cluster_selection.png")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved {path}")
+
 
 def plot_segment_distribution(rfm):
     """Pie chart of segment sizes."""
@@ -509,13 +650,14 @@ def main():
     )
 
     # Step 6: Recommendations
-    recs_df = generate_recommendations(affinity_pivot)
+    recs_df = generate_recommendations(rfm, affinity_pivot)
 
     # Save CSVs
     save_outputs(rfm, affinity, recs_df)
 
     # Save visualizations
     print("\nGenerating visualizations...")
+    plot_cluster_selection(rfm)
     plot_segment_distribution(rfm)
     plot_rfm_heatmap(rfm)
     plot_churn_feature_importance(clf, feature_cols)

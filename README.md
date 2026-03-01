@@ -120,16 +120,14 @@ python scripts/customer_intelligence.py
 **Pipeline steps:**
 
 1. **RFM Analysis** — Recency, Frequency, Monetary scores with quintile rankings for all ~100k customers
-2. **Behavioral Segmentation** — Mutually exclusive segments assigned in priority order:
-   - **High-Value Lapsed** — Top 25% ABV + 180+ days inactive
-   - **At-Risk** — H1→H2 2025 frequency declined 50%+
-   - **New** — First purchase within 30 days of reference date
-   - **Loyal** — 5+ purchases
-   - **Repeat** — 2-5 purchases, active within 90 days
-   - **Inactive** — Everyone else
+2. **K-Means Segmentation** — Data-driven clustering replaces rule-based segments:
+   - Features: `r_score`, `f_score`, `m_score`, `abv`, `tenure_days`, `h1_freq`, `h2_freq`, `freq_trend`
+   - StandardScaler normalization before clustering
+   - Optimal k selected from k=2..15 via highest silhouette score (elbow + silhouette dual plot saved as `cluster_selection.png`)
+   - Clusters auto-labeled based on centroid characteristics (e.g., high recency + high ABV → "High-Value Lapsed", high frequency + low recency → "Loyal")
 3. **Churn Prediction** — Random Forest classifier (200 trees) trained on RFM scores, tenure, frequency trends, and purchase cadence; outputs per-customer churn probability and risk tier (Low/Medium/High)
 4. **Category Affinity** — Share-of-wallet analysis per segment across 5 product categories
-5. **Re-engagement Recommendations** — Per-segment timing and action recommendations referencing top affinity categories
+5. **Re-engagement Recommendations** — Dynamically generated per-segment timing and action recommendations based on cluster characteristics and top affinity categories
 
 **Outputs** (in `data/customer_intelligence/`):
 
@@ -140,6 +138,7 @@ python scripts/customer_intelligence.py
 | `category_affinity.csv` | Segment x category affinity percentages |
 | `churn_predictions.csv` | Per-customer churn probability and risk tier |
 | `recommendations.csv` | Timing and action per segment |
+| `cluster_selection.png` | Elbow + silhouette dual plot for optimal k selection |
 | `segment_distribution.png` | Pie chart of segment sizes |
 | `rfm_heatmap.png` | Average RFM scores by segment |
 | `churn_feature_importance.png` | Random Forest feature importances |

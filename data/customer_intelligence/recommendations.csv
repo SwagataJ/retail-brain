@@ -1,7 +1,4 @@
 segment,recommended_timing,recommended_action,top_affinity_category
-New,Within 7 days of first purchase,Welcome offer: 10-15% discount on Electronics; onboarding email series,Electronics
-Repeat,Every 21-30 days,Loyalty enrollment; bundle offers on Electronics + Home,Electronics
-Loyal,Bi-weekly touchpoint,VIP early access to Electronics; referral program; exclusive previews,Electronics
-High-Value Lapsed,Immediate (within 7 days),20-25% win-back discount on Electronics; personal outreach,Electronics
-At-Risk,Within 14 days,15% retention offer on Electronics; feedback survey; personalized Home picks,Electronics
 Inactive,Quarterly batch,Low-cost seasonal email featuring Electronics; re-activation coupon,Electronics
+Loyal,Immediate (within 7 days),20-25% win-back discount on Electronics; personal outreach; Home recommendations,Electronics
+New,Bi-weekly touchpoint,VIP early access to Electronics; referral program; exclusive Home previews,Electronics

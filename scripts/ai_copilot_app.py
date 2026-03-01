@@ -15,6 +15,10 @@ from datetime import datetime
 
 import streamlit as st
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 from ai_copilot import (
     AWS_REGION,
     CSV_MANIFEST,
@@ -27,7 +31,7 @@ from ai_copilot import (
     create_bedrock_client,
     extract_chart_directives,
     load_all_data,
-    render_all_charts,
+    render_chart,
     save_history,
 )
 
@@ -143,8 +147,11 @@ if not st.session_state.chat_display:
 for entry in st.session_state.chat_display:
     with st.chat_message(entry["role"]):
         st.markdown(entry["content"])
-        for fig in entry.get("charts", []):
-            st.pyplot(fig)
+        for spec in entry.get("chart_specs", []):
+            fig = render_chart(spec, 0, save=False)
+            if fig:
+                st.pyplot(fig)
+                plt.close(fig)
 
 # ---------------------------------------------------------------------------
 # Chat input handling
@@ -155,7 +162,7 @@ if user_input := st.chat_input("Ask about your data..."):
     with st.chat_message("user"):
         st.markdown(user_input)
     st.session_state.chat_display.append(
-        {"role": "user", "content": user_input, "charts": []}
+        {"role": "user", "content": user_input, "chart_specs": []}
     )
 
     # Call Bedrock
@@ -179,16 +186,17 @@ if user_input := st.chat_input("Ask about your data..."):
             clean_text, chart_specs = extract_chart_directives(response)
             st.markdown(clean_text)
 
-            # Render and display charts inline (no file saving)
-            figures = []
+            # Render and display charts inline
             if chart_specs:
-                figures = render_all_charts(chart_specs, save=False)
-                for fig in figures:
-                    st.pyplot(fig)
+                for spec in chart_specs:
+                    fig = render_chart(spec, 0, save=False)
+                    if fig:
+                        st.pyplot(fig)
+                        plt.close(fig)
 
-            # Persist to display history
+            # Store specs (not fig objects) so they survive reruns
             st.session_state.chat_display.append(
-                {"role": "assistant", "content": clean_text, "charts": figures}
+                {"role": "assistant", "content": clean_text, "chart_specs": chart_specs}
             )
 
             # Save conversation to disk

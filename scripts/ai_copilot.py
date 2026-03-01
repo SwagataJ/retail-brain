@@ -30,7 +30,8 @@ MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-202
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 MAX_TOKENS = 4096
 TEMPERATURE = 0.3
-MAX_HISTORY = 20  # conversation turns retained
+MAX_HISTORY = 20          # conversation turns retained
+MAX_CONVERSATION_CHARS = 400_000  # ~100K tokens — leaves room for system prompt
 
 CHART_DIR = os.path.join(DATA_DIR, "copilot_charts")
 EXPORT_DIR = os.path.join(DATA_DIR, "copilot_exports")
@@ -43,6 +44,11 @@ DEBUG = False
 
 # CSV paths keyed by logical name ─ (subdirectory, filename)
 CSV_MANIFEST = {
+    # Historical sales
+    "daily_sales":            (".", "daily_sales.csv"),
+    "transactions":           (".", "transactions.csv"),
+    "transaction_items":      (".", "transaction_items.csv"),
+    "products":               (".", "products.csv"),
     # Forecasts
     "forecast_results":       ("forecasts", "forecast_results.csv"),
     # Customer Intelligence
@@ -68,7 +74,8 @@ SMALL_CSVS = [
 ]
 
 # Large CSVs that get pre-aggregated
-LARGE_CSVS = ["rfm_scores", "churn_predictions", "price_elasticity",
+LARGE_CSVS = ["daily_sales", "transactions", "transaction_items", "products",
+              "rfm_scores", "churn_predictions", "price_elasticity",
               "optimal_discounts"]
 
 # ---------------------------------------------------------------------------
@@ -136,6 +143,18 @@ def _df_to_csv_string(df):
 def compute_aggregations(data):
     """Pre-compute summary tables from large CSVs. Returns dict[name → csv_string]."""
     aggs = {}
+
+    # Monthly revenue by category from daily sales
+    if "daily_sales" in data:
+        df = data["daily_sales"].copy()
+        df["ds"] = pd.to_datetime(df["ds"])
+        df["month"] = df["ds"].dt.to_period("M").astype(str)
+        monthly = df.groupby(["category", "month"]).agg(
+            revenue=("y", "sum"),
+            days=("y", "count"),
+        ).reset_index()
+        monthly["revenue"] = monthly["revenue"].round(2)
+        aggs["monthly_sales_by_category"] = _df_to_csv_string(monthly)
 
     # RFM per-segment percentiles
     if "rfm_scores" in data:
@@ -233,11 +252,13 @@ def build_system_prompt(data, aggregations):
     # Tool use instructions
     sections.append(
         "## Data Lookup Tools\n"
-        "For questions about specific customers or products, use the provided "
-        "tools to look up row-level data from the full datasets (rfm_scores: "
-        "~100K rows, churn_predictions: ~100K rows, price_elasticity: ~2K rows, "
-        "optimal_discounts: ~2K rows). The aggregated summaries above give you "
-        "the big picture; the tools let you drill into specifics.\n"
+        "For questions about specific customers, products, or daily sales, use "
+        "the provided tools to look up row-level data from the full datasets "
+        "(daily_sales: ~3,600 rows, rfm_scores: ~100K rows, churn_predictions: "
+        "~100K rows, price_elasticity: ~2K rows, optimal_discounts: ~2K rows). "
+        "The aggregated summaries above give you the big picture; the tools let "
+        "you drill into specifics. For daily sales charts, use search_daily_sales "
+        "to fetch the data, then emit a [CHART:...] directive.\n"
     )
 
     # Chart rendering instructions
@@ -269,8 +290,9 @@ def build_tool_definitions():
                 "name": "lookup_customer",
                 "description": (
                     "Look up a specific customer by their ID. Returns the "
-                    "customer's RFM scores, segment, churn probability, and "
-                    "churn risk tier."
+                    "customer's RFM scores, segment, churn probability, "
+                    "churn risk tier, first and last transaction dates, "
+                    "and total transaction count."
                 ),
                 "inputSchema": {
                     "json": {
@@ -395,6 +417,99 @@ def build_tool_definitions():
                 },
             }
         },
+        {
+            "toolSpec": {
+                "name": "search_daily_sales",
+                "description": (
+                    "Look up daily sales revenue from the daily_sales dataset "
+                    "(~3,600 rows). Filter by category and/or date range. "
+                    "Returns daily rows with columns: category, ds (date), "
+                    "y (revenue). Use this to answer questions about "
+                    "historical sales trends, daily patterns, or to get data "
+                    "for plotting sales over time."
+                ),
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "description": "Filter by category (e.g. Electronics, Clothing, Beauty, Home, Sports)",
+                            },
+                            "start_date": {
+                                "type": "string",
+                                "description": "Start date inclusive (YYYY-MM-DD)",
+                            },
+                            "end_date": {
+                                "type": "string",
+                                "description": "End date inclusive (YYYY-MM-DD)",
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "Max rows to return (default: 90)",
+                            },
+                        },
+                        "required": [],
+                    }
+                },
+            }
+        },
+        {
+            "toolSpec": {
+                "name": "lookup_customer_transactions",
+                "description": (
+                    "Look up all transactions for a specific customer. "
+                    "Returns spending by category (department) with total "
+                    "amount, transaction count, and items bought. Can also "
+                    "return monthly spending breakdown. Use this to answer "
+                    "questions about a customer's purchase history across "
+                    "departments/categories."
+                ),
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "customer_id": {
+                                "type": "integer",
+                                "description": "The customer ID to look up",
+                            },
+                            "group_by": {
+                                "type": "string",
+                                "description": "Grouping: 'category' for per-department totals, 'month' for monthly by category (default: category)",
+                            },
+                        },
+                        "required": ["customer_id"],
+                    }
+                },
+            }
+        },
+        {
+            "toolSpec": {
+                "name": "top_customers_by_revenue",
+                "description": (
+                    "Find the top N customers by total revenue and return "
+                    "their spending breakdown by category (department). "
+                    "Use this to answer questions like 'which customers "
+                    "drove the most revenue' or 'top spenders by department'."
+                ),
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "limit": {
+                                "type": "integer",
+                                "description": "Number of top customers to return (default: 10)",
+                            },
+                            "category": {
+                                "type": "string",
+                                "description": "Optional: only rank by revenue in this category",
+                            },
+                        },
+                        "required": [],
+                    }
+                },
+            }
+        },
     ]
     return {"tools": tools}
 
@@ -428,6 +543,14 @@ def execute_tool(tool_name, tool_input, data):
             for k, v in result["churn"].items():
                 if k not in merged:
                     merged[k] = v
+        # Add actual transaction dates from transactions data
+        if "transactions" in data:
+            txns = data["transactions"][data["transactions"]["customer_id"] == cid]
+            if not txns.empty:
+                dates = pd.to_datetime(txns["transaction_date"])
+                merged["last_transaction_date"] = str(dates.max().date())
+                merged["first_transaction_date"] = str(dates.min().date())
+                merged["total_transactions"] = len(txns)
         return json.dumps(merged, default=str)
 
     elif tool_name == "lookup_product":
@@ -521,6 +644,92 @@ def execute_tool(tool_name, tool_input, data):
         df = df.head(limit)
         return df.to_json(orient="records", default_handler=str)
 
+    elif tool_name == "search_daily_sales":
+        if "daily_sales" not in data:
+            return json.dumps({"error": "daily_sales data not available"})
+        df = data["daily_sales"][["category", "ds", "y"]].copy()
+        # Apply filters
+        if "category" in tool_input:
+            df = df[df["category"].str.lower() == tool_input["category"].lower()]
+        if "start_date" in tool_input:
+            df = df[df["ds"] >= tool_input["start_date"]]
+        if "end_date" in tool_input:
+            df = df[df["ds"] <= tool_input["end_date"]]
+        df = df.sort_values("ds")
+        limit = tool_input.get("limit", 90)
+        df = df.head(limit)
+        return df.to_json(orient="records", default_handler=str)
+
+    elif tool_name == "lookup_customer_transactions":
+        for required in ("transactions", "transaction_items", "products"):
+            if required not in data:
+                return json.dumps({"error": f"{required} data not available"})
+        cid = tool_input["customer_id"]
+        # Filter transactions for this customer
+        txns = data["transactions"][data["transactions"]["customer_id"] == cid]
+        if txns.empty:
+            return json.dumps({"error": f"Customer {cid} not found in transactions"})
+        # Join with items and products to get categories
+        items = data["transaction_items"].merge(
+            txns[["transaction_id", "transaction_date"]], on="transaction_id"
+        )
+        items = items.merge(
+            data["products"][["product_id", "category"]], on="product_id"
+        )
+        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+
+        group_by = tool_input.get("group_by", "category")
+        if group_by == "month":
+            items["month"] = pd.to_datetime(items["transaction_date"]).dt.to_period("M").astype(str)
+            summary = items.groupby(["category", "month"]).agg(
+                total_spent=("line_total", "sum"),
+                items_bought=("quantity", "sum"),
+            ).reset_index().round(2)
+            summary = summary.sort_values(["month", "category"])
+        else:
+            summary = items.groupby("category").agg(
+                total_spent=("line_total", "sum"),
+                items_bought=("quantity", "sum"),
+                transactions=("transaction_id", "nunique"),
+            ).reset_index().round(2)
+            summary = summary.sort_values("total_spent", ascending=False)
+        return summary.to_json(orient="records", default_handler=str)
+
+    elif tool_name == "top_customers_by_revenue":
+        for required in ("transactions", "transaction_items", "products"):
+            if required not in data:
+                return json.dumps({"error": f"{required} data not available"})
+        # Join transactions → items → products
+        items = data["transaction_items"].merge(
+            data["transactions"][["transaction_id", "customer_id"]],
+            on="transaction_id",
+        )
+        items = items.merge(
+            data["products"][["product_id", "category"]], on="product_id"
+        )
+        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+        # Optional category filter
+        if "category" in tool_input:
+            items = items[items["category"].str.lower() == tool_input["category"].lower()]
+        # Find top N customers by total revenue
+        limit = tool_input.get("limit", 10)
+        top_ids = (
+            items.groupby("customer_id")["line_total"]
+            .sum().nlargest(limit).index.tolist()
+        )
+        # Get per-category breakdown for those customers
+        top_items = items[items["customer_id"].isin(top_ids)]
+        summary = top_items.groupby(["customer_id", "category"]).agg(
+            total_spent=("line_total", "sum"),
+            items_bought=("quantity", "sum"),
+        ).reset_index().round(2)
+        # Add total per customer for context
+        totals = summary.groupby("customer_id")["total_spent"].sum().reset_index()
+        totals.columns = ["customer_id", "grand_total"]
+        summary = summary.merge(totals, on="customer_id")
+        summary = summary.sort_values(["grand_total", "category"], ascending=[False, True])
+        return summary.to_json(orient="records", default_handler=str)
+
     else:
         return json.dumps({"error": f"Unknown tool: {tool_name}"})
 
@@ -528,7 +737,7 @@ def execute_tool(tool_name, tool_input, data):
 # Chart rendering
 # ---------------------------------------------------------------------------
 
-CHART_PATTERN = re.compile(r"\[CHART:(.*?)\]", re.DOTALL)
+CHART_PATTERN = re.compile(r"\[CHART:(\{.*?\})\]", re.DOTALL)
 
 
 def extract_chart_directives(response):
@@ -678,6 +887,37 @@ def create_bedrock_client():
     return boto3.client("bedrock-runtime", region_name=AWS_REGION)
 
 
+def _conversation_chars(conversation):
+    """Estimate total character count of a conversation."""
+    total = 0
+    for msg in conversation:
+        for block in msg.get("content", []):
+            if "text" in block:
+                total += len(block["text"])
+            elif "json" in block:
+                total += len(json.dumps(block["json"]))
+            elif "toolUse" in block:
+                total += len(json.dumps(block["toolUse"].get("input", {})))
+            elif "toolResult" in block:
+                for c in block["toolResult"].get("content", []):
+                    if "text" in c:
+                        total += len(c["text"])
+                    elif "json" in c:
+                        total += len(json.dumps(c["json"]))
+    return total
+
+
+def _trim_conversation(conversation):
+    """Trim conversation by turn count and total size."""
+    while len(conversation) > MAX_HISTORY:
+        conversation.pop(0)
+    while conversation and _conversation_chars(conversation) > MAX_CONVERSATION_CHARS:
+        conversation.pop(0)
+    # Ensure conversation starts with a user turn (Bedrock requirement)
+    while conversation and conversation[0]["role"] != "user":
+        conversation.pop(0)
+
+
 def call_claude(client, system_prompt, tools, conversation, user_message, data):
     """Send a message to Claude via Bedrock converse API.
 
@@ -688,13 +928,7 @@ def call_claude(client, system_prompt, tools, conversation, user_message, data):
     # Append user message
     conversation.append({"role": "user", "content": [{"text": user_message}]})
 
-    # Trim to MAX_HISTORY (keep most recent turns)
-    while len(conversation) > MAX_HISTORY:
-        conversation.pop(0)
-
-    # Ensure conversation starts with a user turn (Bedrock requirement)
-    while conversation and conversation[0]["role"] != "user":
-        conversation.pop(0)
+    _trim_conversation(conversation)
 
     while True:
         response = client.converse(
@@ -764,10 +998,7 @@ def call_claude(client, system_prompt, tools, conversation, user_message, data):
         conversation.append({"role": "user", "content": tool_results})
 
         # Trim again after tool loop
-        while len(conversation) > MAX_HISTORY:
-            conversation.pop(0)
-        while conversation and conversation[0]["role"] != "user":
-            conversation.pop(0)
+        _trim_conversation(conversation)
 
 # ---------------------------------------------------------------------------
 # REPL commands

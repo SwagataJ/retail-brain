@@ -1,0 +1,26 @@
+category,subcategory,avg_cannibalization_pct,risk_label
+Beauty,Fragrance,-37.14,Halo effect
+Beauty,Haircare,-26.84,Halo effect
+Beauty,Makeup,-45.65,Halo effect
+Beauty,Shampoo,-32.24,Halo effect
+Beauty,Skincare,-38.47,Halo effect
+Clothing,Dresses,-52.21,Halo effect
+Clothing,Jackets,-45.92,Halo effect
+Clothing,Jeans,-53.11,Halo effect
+Clothing,Sneakers,-52.97,Halo effect
+Clothing,T-Shirts,-67.92,Halo effect
+Electronics,Cameras,-17.07,Halo effect
+Electronics,Headphones,-15.38,Halo effect
+Electronics,Laptops,-18.66,Halo effect
+Electronics,Smartphones,-27.81,Halo effect
+Electronics,Tablets,-21.72,Halo effect
+Groceries,Bakery,-31.14,Halo effect
+Groceries,Beverages,-48.05,Halo effect
+Groceries,Dairy,-42.22,Halo effect
+Groceries,Frozen,-55.75,Halo effect
+Groceries,Snacks,-36.22,Halo effect
+Home,Bedding,-15.97,Halo effect
+Home,Decor,-11.39,Halo effect
+Home,Furniture,-7.88,Halo effect
+Home,Kitchenware,-8.77,Halo effect
+Home,Lighting,-11.95,Halo effect

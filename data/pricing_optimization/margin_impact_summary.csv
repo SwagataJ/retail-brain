@@ -1,0 +1,6 @@
+category,avg_current_margin,avg_optimal_discount,avg_new_margin,avg_profit_uplift,top_recommendation
+Beauty,60.01,0.0,60.01,0.0,hold_price
+Clothing,50.21,0.0,50.21,0.0,hold_price
+Electronics,17.51,0.0,17.51,-0.0,hold_price
+Groceries,22.45,0.0,22.45,0.0,hold_price
+Home,39.42,0.0,39.42,0.0,hold_price

@@ -547,13 +547,20 @@ def extract_chart_directives(response):
     return clean, specs
 
 
-def render_chart(spec, index):
-    """Render a single chart spec and save as PNG. Returns filepath or None."""
+def render_chart(spec, index, save=True):
+    """Render a single chart spec.
+
+    If *save* is True (default), saves the chart as a PNG and returns the
+    filepath.  If *save* is False, returns the matplotlib Figure object
+    directly (caller is responsible for displaying/closing it).
+    Returns None on failure.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    os.makedirs(CHART_DIR, exist_ok=True)
+    if save:
+        os.makedirs(CHART_DIR, exist_ok=True)
     chart_type = spec.get("type", "bar")
     title = spec.get("title", "Chart")
     chart_data = spec.get("data", {})
@@ -630,6 +637,10 @@ def render_chart(spec, index):
 
         ax.set_title(title)
         fig.tight_layout()
+
+        if not save:
+            return fig
+
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         path = os.path.join(CHART_DIR, f"chart_{index}_{ts}.png")
         fig.savefig(path, dpi=150)
@@ -644,14 +655,18 @@ def render_chart(spec, index):
         return None
 
 
-def render_all_charts(specs):
-    """Render all chart specs. Returns list of saved file paths."""
-    paths = []
+def render_all_charts(specs, save=True):
+    """Render all chart specs.
+
+    If *save* is True, returns list of saved file paths.
+    If *save* is False, returns list of matplotlib Figure objects.
+    """
+    results = []
     for i, spec in enumerate(specs):
-        path = render_chart(spec, i)
-        if path:
-            paths.append(path)
-    return paths
+        result = render_chart(spec, i, save=save)
+        if result:
+            results.append(result)
+    return results
 
 # ---------------------------------------------------------------------------
 # Bedrock client and API

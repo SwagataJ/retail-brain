@@ -17,7 +17,6 @@ import streamlit as st
 
 from ai_copilot import (
     AWS_REGION,
-    CHART_DIR,
     CSV_MANIFEST,
     EXPORT_DIR,
     MODEL_ID,
@@ -144,9 +143,8 @@ if not st.session_state.chat_display:
 for entry in st.session_state.chat_display:
     with st.chat_message(entry["role"]):
         st.markdown(entry["content"])
-        for chart_path in entry.get("charts", []):
-            if os.path.exists(chart_path):
-                st.image(chart_path)
+        for fig in entry.get("charts", []):
+            st.pyplot(fig)
 
 # ---------------------------------------------------------------------------
 # Chat input handling
@@ -181,16 +179,16 @@ if user_input := st.chat_input("Ask about your data..."):
             clean_text, chart_specs = extract_chart_directives(response)
             st.markdown(clean_text)
 
-            # Render and display charts inline
-            chart_paths = []
+            # Render and display charts inline (no file saving)
+            figures = []
             if chart_specs:
-                chart_paths = render_all_charts(chart_specs)
-                for p in chart_paths:
-                    st.image(p)
+                figures = render_all_charts(chart_specs, save=False)
+                for fig in figures:
+                    st.pyplot(fig)
 
             # Persist to display history
             st.session_state.chat_display.append(
-                {"role": "assistant", "content": clean_text, "charts": chart_paths}
+                {"role": "assistant", "content": clean_text, "charts": figures}
             )
 
             # Save conversation to disk

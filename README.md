@@ -27,6 +27,7 @@ retail-brain/
 │   └── forecasts/             # Forecast outputs & evaluation plots
 ├── models/
 │   └── nbeats_model/          # Saved NBEATSx production model
+├── requirements.txt             # Python dependencies
 ├── design.md                  # System architecture & design document
 ├── requirements.md            # Detailed requirements & acceptance criteria
 └── LICENSE                    # Apache 2.0
@@ -44,7 +45,7 @@ python3 -m venv retail_brain_env
 source retail_brain_env/bin/activate
 
 # Install dependencies
-pip install numpy pandas faker matplotlib neuralforecast
+pip install -r requirements.txt
 
 # 1. Generate synthetic data (~2M rows across 6 CSVs)
 python scripts/generate_data.py

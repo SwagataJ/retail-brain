@@ -1,0 +1,5 @@
+numpy>=2.0
+pandas>=2.0
+faker>=40.0
+matplotlib>=3.9
+neuralforecast>=3.0

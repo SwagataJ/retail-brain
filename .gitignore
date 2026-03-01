@@ -16,6 +16,10 @@ data/transactions.csv
 data/transaction_items.csv
 data/daily_sales.csv
 
+# Customer intelligence (large per-customer files)
+data/customer_intelligence/rfm_scores.csv
+data/customer_intelligence/churn_predictions.csv
+
 # Python
 __pycache__/
 *.pyc

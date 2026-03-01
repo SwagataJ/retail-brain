@@ -6,7 +6,7 @@ AI-powered decision-making platform for retail and marketplace teams.
 
 Retail Brain unifies demand forecasting, customer intelligence, pricing optimization, and natural language interaction into a single system. It processes sales transactions, customer behavior, and market signals through specialized ML pipelines to generate actionable retail insights.
 
-**Current status:** Synthetic data generation and sales forecasting (NBEATSx) are implemented and working. Customer intelligence, pricing optimization, and the AI copilot interface are on the roadmap.
+**Current status:** Synthetic data generation, sales forecasting (NBEATSx), and customer intelligence (segmentation, churn prediction, re-engagement) are implemented and working. Pricing optimization and the AI copilot interface are on the roadmap.
 
 ## Project Structure
 
@@ -15,7 +15,8 @@ retail-brain/
 ├── scripts/
 │   ├── generate_data.py       # Synthetic data generator (6 CSVs)
 │   ├── train_forecast.py      # NBEATSx training & validation pipeline
-│   └── predict_forecast.py    # 30-day forecast generation
+│   ├── predict_forecast.py    # 30-day forecast generation
+│   └── customer_intelligence.py  # Segmentation, churn & recommendations
 ├── data/
 │   ├── products.csv           # ~2,000 products across 5 categories
 │   ├── stores.csv             # ~100 stores (mall, standalone, online)
@@ -24,7 +25,8 @@ retail-brain/
 │   ├── transactions.csv       # ~500,000 transactions over 2 years
 │   ├── transaction_items.csv  # ~1,200,000 line items
 │   ├── daily_sales.csv        # Aggregated daily revenue by category
-│   └── forecasts/             # Forecast outputs & evaluation plots
+│   ├── forecasts/             # Forecast outputs & evaluation plots
+│   └── customer_intelligence/ # Segmentation & churn outputs (CSVs + PNGs)
 ├── models/
 │   └── nbeats_model/          # Saved NBEATSx production model
 ├── requirements.txt             # Python dependencies
@@ -107,13 +109,49 @@ The forecasting pipeline uses **NBEATSx** (Neural Basis Expansion Analysis with 
 - Promotion-driven demand with category-level price elasticity
 - Upward trend in online channel sales
 
+## Customer Intelligence
+
+The customer intelligence pipeline (`scripts/customer_intelligence.py`) segments customers, predicts churn, analyzes category affinity, and generates re-engagement recommendations.
+
+```bash
+python scripts/customer_intelligence.py
+```
+
+**Pipeline steps:**
+
+1. **RFM Analysis** — Recency, Frequency, Monetary scores with quintile rankings for all ~100k customers
+2. **Behavioral Segmentation** — Mutually exclusive segments assigned in priority order:
+   - **High-Value Lapsed** — Top 25% ABV + 180+ days inactive
+   - **At-Risk** — H1→H2 2025 frequency declined 50%+
+   - **New** — First purchase within 30 days of reference date
+   - **Loyal** — 5+ purchases
+   - **Repeat** — 2-5 purchases, active within 90 days
+   - **Inactive** — Everyone else
+3. **Churn Prediction** — Random Forest classifier (200 trees) trained on RFM scores, tenure, frequency trends, and purchase cadence; outputs per-customer churn probability and risk tier (Low/Medium/High)
+4. **Category Affinity** — Share-of-wallet analysis per segment across 5 product categories
+5. **Re-engagement Recommendations** — Per-segment timing and action recommendations referencing top affinity categories
+
+**Outputs** (in `data/customer_intelligence/`):
+
+| File | Description |
+|------|-------------|
+| `rfm_scores.csv` | Per-customer RFM scores, segment, churn probability |
+| `segment_summary.csv` | Aggregate metrics per segment |
+| `category_affinity.csv` | Segment x category affinity percentages |
+| `churn_predictions.csv` | Per-customer churn probability and risk tier |
+| `recommendations.csv` | Timing and action per segment |
+| `segment_distribution.png` | Pie chart of segment sizes |
+| `rfm_heatmap.png` | Average RFM scores by segment |
+| `churn_feature_importance.png` | Random Forest feature importances |
+| `category_affinity_heatmap.png` | Segment x category heatmap |
+
 ## Roadmap
 
 | Module | Description | Status |
 |--------|-------------|--------|
 | Data Generation | Synthetic retail dataset with realistic patterns | Done |
 | Sales Forecasting | NBEATSx 30-day revenue forecasting by category | Done |
-| Customer Intelligence | Segmentation, churn prediction, re-engagement targeting | Planned |
+| Customer Intelligence | Segmentation, churn prediction, re-engagement targeting | Done |
 | Pricing Optimization | Price elasticity modeling, promotion ROI, markdown optimization | Planned |
 | AI Copilot | Natural language interface for business users | Planned |
 

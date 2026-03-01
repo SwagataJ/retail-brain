@@ -1,0 +1,31 @@
+segment,category,share_of_wallet
+At-Risk,Beauty,5.75
+At-Risk,Clothing,9.38
+At-Risk,Electronics,61.65
+At-Risk,Groceries,1.45
+At-Risk,Home,21.76
+High-Value Lapsed,Beauty,2.59
+High-Value Lapsed,Clothing,4.31
+High-Value Lapsed,Electronics,79.53
+High-Value Lapsed,Groceries,0.59
+High-Value Lapsed,Home,12.98
+Inactive,Beauty,7.29
+Inactive,Clothing,11.42
+Inactive,Electronics,54.11
+Inactive,Groceries,1.88
+Inactive,Home,25.31
+Loyal,Beauty,5.43
+Loyal,Clothing,8.8
+Loyal,Electronics,64.11
+Loyal,Groceries,1.35
+Loyal,Home,20.31
+New,Beauty,5.41
+New,Clothing,8.97
+New,Electronics,63.94
+New,Groceries,1.34
+New,Home,20.34
+Repeat,Beauty,5.42
+Repeat,Clothing,8.85
+Repeat,Electronics,64.18
+Repeat,Groceries,1.35
+Repeat,Home,20.21

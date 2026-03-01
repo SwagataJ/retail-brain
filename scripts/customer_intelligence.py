@@ -247,24 +247,114 @@ def assign_segments(rfm, transactions, customers):
 
 # ── Step 4: Churn Prediction ────────────────────────────────────────────────
 
-def predict_churn(rfm):
+def predict_churn(rfm, transactions, items, products):
     """Train Random Forest churn model and score all customers."""
     print("\nTraining churn prediction model...")
 
-    # Feature engineering
-    rfm["freq_trend"] = rfm["h2_freq"] - rfm["h1_freq"]
+    # ── Feature engineering (independent of clustering features) ──
 
-    # Average days between purchases (for customers with 2+ purchases)
-    rfm["avg_days_between"] = np.where(
-        rfm["frequency"] >= 2,
-        rfm["tenure_days"] / rfm["frequency"],
-        rfm["tenure_days"],
+    # A. Discount behavior (from transaction_items)
+    item_cust = items.merge(
+        transactions[["transaction_id", "customer_id"]], on="transaction_id"
     )
+    discount_agg = item_cust.groupby("customer_id").agg(
+        avg_discount_pct=("discount_pct", "mean"),
+        _discount_count=("discount_pct", "count"),
+    ).reset_index()
+    # Vectorized discount_dependency: fraction of items with discount > 0
+    has_discount = item_cust[item_cust["discount_pct"] > 0].groupby("customer_id").size().reset_index(name="_has_disc")
+    discount_agg = discount_agg.merge(has_discount, on="customer_id", how="left")
+    discount_agg["_has_disc"] = discount_agg["_has_disc"].fillna(0)
+    discount_agg["discount_dependency"] = discount_agg["_has_disc"] / discount_agg["_discount_count"]
+    discount_agg = discount_agg[["customer_id", "avg_discount_pct", "discount_dependency"]]
+
+    # B. Product/category diversity (from transaction_items + products)
+    item_prod = item_cust.merge(products[["product_id", "category"]], on="product_id")
+    diversity_agg = item_prod.groupby("customer_id").agg(
+        category_diversity=("category", "nunique"),
+        product_diversity=("product_id", "nunique"),
+    ).reset_index()
+
+    # C. Basket characteristics
+    items_per_txn = item_cust.groupby(["customer_id", "transaction_id"]).size().reset_index(name="item_count")
+    basket_agg = items_per_txn.groupby("customer_id").agg(
+        avg_items_per_txn=("item_count", "mean"),
+    ).reset_index()
+
+    # D. Purchase timing patterns (from transactions)
+    txn_sorted = transactions.sort_values(["customer_id", "transaction_date"])
+    txn_sorted["prev_date"] = txn_sorted.groupby("customer_id")["transaction_date"].shift(1)
+    txn_sorted["gap_days"] = (txn_sorted["transaction_date"] - txn_sorted["prev_date"]).dt.days
+
+    gap_agg = txn_sorted.dropna(subset=["gap_days"]).groupby("customer_id").agg(
+        gap_mean=("gap_days", "mean"),
+        gap_std=("gap_days", "std"),
+        largest_gap_days=("gap_days", "max"),
+    ).reset_index()
+    gap_agg["gap_std"] = gap_agg["gap_std"].fillna(0)
+    gap_agg["purchase_regularity"] = np.where(
+        gap_agg["gap_mean"] > 0,
+        gap_agg["gap_std"] / gap_agg["gap_mean"],
+        0,
+    )
+    gap_agg = gap_agg[["customer_id", "purchase_regularity", "largest_gap_days"]]
+
+    # Months active: distinct (year, month) pairs per customer
+    txn_sorted["yr_mo"] = txn_sorted["transaction_date"].dt.to_period("M")
+    months_active = txn_sorted.groupby("customer_id")["yr_mo"].nunique().reset_index()
+    months_active.columns = ["customer_id", "months_active"]
+
+    # E. Spending trends (H1 vs H2)
+    txn_h1 = transactions[transactions["transaction_date"].between(H1_START, H1_END)]
+    txn_h2 = transactions[transactions["transaction_date"].between(H2_START, H2_END)]
+
+    h1_spend = txn_h1.groupby("customer_id").agg(
+        h1_total=("total_amount", "sum"),
+        h1_avg_order=("total_amount", "mean"),
+    ).reset_index()
+    h2_spend = txn_h2.groupby("customer_id").agg(
+        h2_total=("total_amount", "sum"),
+        h2_avg_order=("total_amount", "mean"),
+    ).reset_index()
+
+    spend_trends = rfm[["customer_id"]].merge(h1_spend, on="customer_id", how="left") \
+                                        .merge(h2_spend, on="customer_id", how="left")
+    spend_trends = spend_trends.fillna(0)
+    spend_trends["order_value_trend"] = np.where(
+        spend_trends["h1_avg_order"] > 0,
+        spend_trends["h2_avg_order"] / spend_trends["h1_avg_order"],
+        0,
+    )
+    spend_trends["spend_trend"] = np.where(
+        spend_trends["h1_total"] > 0,
+        spend_trends["h2_total"] / spend_trends["h1_total"],
+        0,
+    )
+    spend_trends = spend_trends[["customer_id", "order_value_trend", "spend_trend"]]
+
+    # Merge all new features into rfm (preserve attrs through merges)
+    saved_attrs = rfm.attrs.copy()
+    for feat_df in [discount_agg, diversity_agg, basket_agg, gap_agg, months_active, spend_trends]:
+        rfm = rfm.merge(feat_df, on="customer_id", how="left")
+    rfm.attrs.update(saved_attrs)
+
+    # Fill defaults for customers with <2 purchases (no gap data)
+    rfm["purchase_regularity"] = rfm["purchase_regularity"].fillna(999.0)
+    rfm["largest_gap_days"] = rfm["largest_gap_days"].fillna(rfm["tenure_days"])
+    rfm["months_active"] = rfm["months_active"].fillna(0)
+    # Fill remaining NaNs with 0
+    churn_feat_fills = ["avg_discount_pct", "discount_dependency",
+                        "category_diversity", "product_diversity",
+                        "avg_items_per_txn", "order_value_trend", "spend_trend"]
+    for col in churn_feat_fills:
+        rfm[col] = rfm[col].fillna(0)
 
     feature_cols = [
-        "r_score", "f_score", "m_score",
-        "tenure_days", "h1_freq", "h2_freq",
-        "freq_trend", "avg_days_between",
+        "avg_discount_pct", "discount_dependency",
+        "category_diversity", "product_diversity",
+        "avg_items_per_txn",
+        "purchase_regularity", "largest_gap_days", "months_active",
+        "order_value_trend", "spend_trend",
     ]
 
     # Label: churned if recency >= 180 days
@@ -642,7 +732,7 @@ def main():
     rfm = assign_segments(rfm, transactions, customers)
 
     # Step 4: Churn prediction
-    rfm, clf, feature_cols = predict_churn(rfm)
+    rfm, clf, feature_cols = predict_churn(rfm, transactions, items, products)
 
     # Step 5: Category affinity
     affinity, affinity_pivot = compute_category_affinity(

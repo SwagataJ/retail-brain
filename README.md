@@ -6,7 +6,7 @@ AI-powered decision-making platform for retail and marketplace teams.
 
 Retail Brain unifies demand forecasting, customer intelligence, pricing optimization, and natural language interaction into a single system. It processes sales transactions, customer behavior, and market signals through specialized ML pipelines to generate actionable retail insights.
 
-**Current status:** Synthetic data generation, sales forecasting (NBEATSx), customer intelligence (segmentation, churn prediction, re-engagement), and pricing optimization (elasticity, discount optimization, promotion timing) are implemented and working. The AI copilot interface is on the roadmap.
+**Current status:** All modules complete — synthetic data generation, sales forecasting (NBEATSx), customer intelligence (segmentation, churn prediction, re-engagement), pricing optimization (elasticity, discount optimization, promotion timing), and the AI Copilot natural language interface.
 
 ## Project Structure
 
@@ -17,7 +17,8 @@ retail-brain/
 │   ├── train_forecast.py      # NBEATSx training & validation pipeline
 │   ├── predict_forecast.py    # 30-day forecast generation
 │   ├── customer_intelligence.py  # Segmentation, churn & recommendations
-│   └── pricing_optimization.py   # Elasticity, discount & promotion timing
+│   ├── pricing_optimization.py   # Elasticity, discount & promotion timing
+│   └── ai_copilot.py             # Natural language copilot (Bedrock)
 ├── data/
 │   ├── products.csv           # ~2,000 products across 5 categories
 │   ├── stores.csv             # ~100 stores (mall, standalone, online)
@@ -28,7 +29,9 @@ retail-brain/
 │   ├── daily_sales.csv        # Aggregated daily revenue by category
 │   ├── forecasts/             # Forecast outputs & evaluation plots
 │   ├── customer_intelligence/ # Segmentation & churn outputs (CSVs + PNGs)
-│   └── pricing_optimization/  # Elasticity & discount outputs (CSVs + PNGs)
+│   ├── pricing_optimization/  # Elasticity & discount outputs (CSVs + PNGs)
+│   ├── copilot_charts/        # AI Copilot chart outputs (PNGs)
+│   └── copilot_exports/       # Exported conversation transcripts
 ├── models/
 │   └── nbeats_model/          # Saved NBEATSx production model
 ├── requirements.txt             # Python dependencies
@@ -63,6 +66,10 @@ python scripts/customer_intelligence.py
 
 # 4. Run pricing optimization pipeline
 python scripts/pricing_optimization.py
+
+# 5. Launch AI Copilot (requires AWS credentials and boto3)
+pip install boto3
+python scripts/ai_copilot.py
 ```
 
 ## Dataset
@@ -187,6 +194,41 @@ python scripts/pricing_optimization.py
 | `demand_seasonality_heatmap.png` | Category x month demand index heatmap |
 | `cannibalization_network.png` | Cannibalization % by category/subcategory |
 
+## AI Copilot
+
+The AI Copilot (`scripts/ai_copilot.py`) provides a natural language CLI interface for querying all pipeline outputs. It uses AWS Bedrock (Claude) for understanding questions and generating business-friendly responses.
+
+```bash
+python scripts/ai_copilot.py          # Launch the copilot
+python scripts/ai_copilot.py --debug  # Launch with debug output
+```
+
+**Prerequisites:** AWS credentials configured (`aws configure` or environment variables) and `boto3` installed.
+
+**How it works:**
+
+1. **Startup** — Loads all 12 output CSVs. Small files (~350 rows total) are embedded verbatim in the system prompt. Large files (rfm_scores 100K, churn_predictions 100K, price_elasticity 2K, optimal_discounts 2K) are aggregated into ~40 summary rows.
+2. **Summary questions** — Answered directly from embedded data: "What is the forecasted revenue for Electronics next week?", "When should we run promotions for Clothing?"
+3. **Drill-down questions** — Claude calls data lookup tools to query row-level data: "What's the churn probability for customer 42?", "Show me the top 10 highest-risk Loyal customers"
+4. **Charts** — Claude emits chart directives that are rendered with matplotlib and saved to `data/copilot_charts/`
+5. **Commands** — `/help`, `/data`, `/clear`, `/export`, `/quit`
+
+**Available tools for drill-down:**
+
+| Tool | Description |
+|------|-------------|
+| `lookup_customer` | Look up a specific customer by ID (RFM scores, segment, churn) |
+| `lookup_product` | Look up a specific product by ID (elasticity, optimal discount) |
+| `search_customers` | Filter customers by segment, churn risk, probability range |
+| `search_products` | Filter products by category, elasticity label, recommendation |
+
+**Configuration** (via environment variables):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BEDROCK_MODEL_ID` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Bedrock model ID |
+| `AWS_REGION` | `us-east-1` | AWS region |
+
 ## Roadmap
 
 | Module | Description | Status |
@@ -195,7 +237,7 @@ python scripts/pricing_optimization.py
 | Sales Forecasting | NBEATSx 30-day revenue forecasting by category | Done |
 | Customer Intelligence | Segmentation, churn prediction, re-engagement targeting | Done |
 | Pricing Optimization | Price elasticity, discount optimization, promotion timing | Done |
-| AI Copilot | Natural language interface for business users | Planned |
+| AI Copilot | Natural language interface for business users | Done |
 
 ## License
 

@@ -907,14 +907,28 @@ def _conversation_chars(conversation):
     return total
 
 
+def _has_tool_result(msg):
+    """Check if a message contains toolResult blocks."""
+    return any("toolResult" in block for block in msg.get("content", []))
+
+
+def _has_tool_use(msg):
+    """Check if a message contains toolUse blocks."""
+    return any("toolUse" in block for block in msg.get("content", []))
+
+
 def _trim_conversation(conversation):
     """Trim conversation by turn count and total size."""
     while len(conversation) > MAX_HISTORY:
         conversation.pop(0)
     while conversation and _conversation_chars(conversation) > MAX_CONVERSATION_CHARS:
         conversation.pop(0)
-    # Ensure conversation starts with a user turn (Bedrock requirement)
-    while conversation and conversation[0]["role"] != "user":
+    # Remove orphaned tool messages from the front: if trimming cut
+    # between a toolUse and its toolResult, drop until we reach a clean
+    # user text message.
+    while conversation and (
+        conversation[0]["role"] != "user" or _has_tool_result(conversation[0])
+    ):
         conversation.pop(0)
 
 

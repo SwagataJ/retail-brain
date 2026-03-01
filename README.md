@@ -131,7 +131,7 @@ python scripts/customer_intelligence.py
    - StandardScaler normalization before clustering
    - Optimal k selected from k=2..15 via highest silhouette score (elbow + silhouette dual plot saved as `cluster_selection.png`)
    - Clusters auto-labeled based on centroid characteristics (e.g., high recency + high ABV → "High-Value Lapsed", high frequency + low recency → "Loyal")
-3. **Churn Prediction** — Random Forest classifier (200 trees) trained on RFM scores, tenure, frequency trends, and purchase cadence; outputs per-customer churn probability and risk tier (Low/Medium/High)
+3. **Churn Prediction** — Random Forest classifier (200 trees) trained on 10 behavioral features independent of clustering: discount behavior, product/category diversity, basket size, purchase regularity, largest purchase gap, months active, and H1→H2 spending trends; outputs per-customer churn probability and risk tier (Low/Medium/High)
 4. **Category Affinity** — Share-of-wallet analysis per segment across 5 product categories
 5. **Re-engagement Recommendations** — Dynamically generated per-segment timing and action recommendations based on cluster characteristics and top affinity categories
 

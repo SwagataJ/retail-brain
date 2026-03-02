@@ -210,7 +210,7 @@ def compute_aggregations(data):
             on="transaction_id",
         )
         items["line_total"] = (
-            items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+            items["quantity"] * items["unit_price"] * (1 - items["discount_pct"] / 100)
         )
         store_rev = items.groupby("store_id").agg(
             revenue=("line_total", "sum"),
@@ -753,7 +753,7 @@ def execute_tool(tool_name, tool_input, data):
         items = items.merge(
             data["products"][["product_id", "category"]], on="product_id"
         )
-        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"] / 100)
 
         group_by = tool_input.get("group_by", "category")
         if group_by == "month":
@@ -784,7 +784,7 @@ def execute_tool(tool_name, tool_input, data):
         items = items.merge(
             data["products"][["product_id", "category"]], on="product_id"
         )
-        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"] / 100)
         # Optional category filter
         if "category" in tool_input:
             items = items[items["category"].str.lower() == tool_input["category"].lower()]
@@ -823,7 +823,7 @@ def execute_tool(tool_name, tool_input, data):
             data["stores"][["store_id", "store_name", "city", "store_type"]],
             on="store_id",
         )
-        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"] / 100)
         # Apply filters
         if "store_id" in tool_input:
             items = items[items["store_id"] == tool_input["store_id"]]

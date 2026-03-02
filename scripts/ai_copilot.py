@@ -1137,6 +1137,113 @@ def call_claude(client, system_prompt, tools, conversation, user_message, data):
         # Trim again after tool loop
         _trim_conversation(conversation)
 
+def call_claude_stream(client, system_prompt, tools, conversation, user_message, data):
+    """Streaming variant of call_claude for the Streamlit UI.
+
+    Yields text chunks as they arrive from Bedrock's converse_stream API.
+    Tool-use rounds are handled with the regular converse() call (non-streaming);
+    only the final text response is streamed.
+    """
+    # Append user message
+    conversation.append({"role": "user", "content": [{"text": user_message}]})
+    _trim_conversation(conversation)
+
+    while True:
+        # Check whether the next response might contain tool use.
+        # We always do a non-streaming call first when we're still in the
+        # tool-use loop.  On the very first call we don't know yet, so we
+        # also use non-streaming (tool calls are common on the first round).
+        response = client.converse(
+            modelId=MODEL_ID,
+            system=[{"text": system_prompt}],
+            messages=list(conversation),
+            inferenceConfig={
+                "maxTokens": MAX_TOKENS,
+                "temperature": TEMPERATURE,
+            },
+            toolConfig=tools,
+        )
+
+        output = response["output"]["message"]
+
+        # Check for tool use
+        tool_uses = [
+            block for block in output["content"] if "toolUse" in block
+        ]
+        if not tool_uses:
+            # No tool use — we got the final response but non-streamed.
+            # Discard it and redo this round with converse_stream().
+            break
+
+        # Execute tools (same logic as call_claude)
+        conversation.append(output)
+        tool_results = []
+        for block in tool_uses:
+            tu = block["toolUse"]
+            tool_name = tu["name"]
+            tool_input = tu["input"]
+            tool_id = tu["toolUseId"]
+
+            if DEBUG:
+                print(f"  [Tool call] {tool_name}({json.dumps(tool_input)})")
+
+            result_str = execute_tool(tool_name, tool_input, data)
+
+            if DEBUG:
+                preview = result_str[:200] + "..." if len(result_str) > 200 else result_str
+                print(f"  [Tool result] {preview}")
+
+            parsed = None
+            try:
+                parsed = json.loads(result_str)
+            except json.JSONDecodeError:
+                pass
+
+            if parsed is not None:
+                if isinstance(parsed, list):
+                    parsed = {"results": parsed}
+                content = [{"json": parsed}]
+            else:
+                content = [{"text": result_str}]
+
+            tool_results.append({
+                "toolResult": {
+                    "toolUseId": tool_id,
+                    "content": content,
+                }
+            })
+
+        conversation.append({"role": "user", "content": tool_results})
+        _trim_conversation(conversation)
+
+    # --- Final round: stream the text response ---
+    stream_response = client.converse_stream(
+        modelId=MODEL_ID,
+        system=[{"text": system_prompt}],
+        messages=list(conversation),
+        inferenceConfig={
+            "maxTokens": MAX_TOKENS,
+            "temperature": TEMPERATURE,
+        },
+        toolConfig=tools,
+    )
+
+    full_text = ""
+    for event in stream_response["stream"]:
+        if "contentBlockDelta" in event:
+            delta = event["contentBlockDelta"]["delta"]
+            if "text" in delta:
+                chunk = delta["text"]
+                full_text += chunk
+                yield chunk
+
+    # Append the full assistant message to conversation history
+    conversation.append({
+        "role": "assistant",
+        "content": [{"text": full_text}],
+    })
+
+
 # ---------------------------------------------------------------------------
 # REPL commands
 # ---------------------------------------------------------------------------

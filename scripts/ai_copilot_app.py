@@ -27,6 +27,7 @@ from ai_copilot import (
     build_system_prompt,
     build_tool_definitions,
     call_claude,
+    call_claude_stream,
     compute_aggregations,
     create_bedrock_client,
     extract_chart_directives,
@@ -165,29 +166,29 @@ if user_input := st.chat_input("Ask about your data..."):
         {"role": "user", "content": user_input, "chart_specs": []}
     )
 
-    # Call Bedrock
+    # Call Bedrock with streaming
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            try:
-                response = call_claude(
-                    st.session_state.client,
-                    st.session_state.system_prompt,
-                    st.session_state.tools,
-                    st.session_state.conversation,
-                    user_input,
-                    st.session_state.data,
-                )
-            except Exception as exc:
-                st.error(f"Error calling Bedrock: {exc}")
-                response = None
+        try:
+            stream = call_claude_stream(
+                st.session_state.client,
+                st.session_state.system_prompt,
+                st.session_state.tools,
+                st.session_state.conversation,
+                user_input,
+                st.session_state.data,
+            )
+            full_response = st.write_stream(stream)
+        except Exception as exc:
+            st.error(f"Error calling Bedrock: {exc}")
+            full_response = None
 
-        if response:
+        if full_response:
             # Extract charts and clean text
-            clean_text, chart_specs = extract_chart_directives(response)
-            st.markdown(clean_text)
+            clean_text, chart_specs = extract_chart_directives(full_response)
 
-            # Render and display charts inline
+            # If chart directives were stripped, re-render the cleaned text
             if chart_specs:
+                st.markdown(clean_text)
                 for spec in chart_specs:
                     fig = render_chart(spec, 0, save=False)
                     if fig:

@@ -287,6 +287,7 @@ def build_system_prompt(data, aggregations):
         "summaries above give you the big picture; the tools let you drill "
         "into specifics. Use search_store_sales to answer questions about "
         "store revenue, top-performing stores, revenue by city or store type. "
+        "Use group_by_month=true to get monthly breakdowns of store sales. "
         "For daily sales charts, use search_daily_sales to fetch the data, "
         "then emit a [CHART:...] directive.\n"
     )
@@ -547,7 +548,8 @@ def build_tool_definitions():
                     "Search store-level revenue breakdown. Joins transactions "
                     "with store metadata to show revenue, transaction count, "
                     "and items sold per store. Optionally filter by store_id, "
-                    "city, store_type, or product category."
+                    "city, store_type, or product category. Use group_by_month "
+                    "to get a monthly time-series breakdown."
                 ),
                 "inputSchema": {
                     "json": {
@@ -568,6 +570,10 @@ def build_tool_definitions():
                             "category": {
                                 "type": "string",
                                 "description": "Filter by product category (e.g. Electronics, Clothing)",
+                            },
+                            "group_by_month": {
+                                "type": "boolean",
+                                "description": "If true, break down results by month (YYYY-MM). Default: false.",
                             },
                             "sort_by": {
                                 "type": "string",
@@ -833,10 +839,17 @@ def execute_tool(tool_name, tool_input, data):
             items = items[items["store_type"].str.lower() == tool_input["store_type"].lower()]
         if "category" in tool_input:
             items = items[items["category"].str.lower() == tool_input["category"].lower()]
-        # Group by store (and category if filtered)
+        # Optional monthly breakdown
+        if tool_input.get("group_by_month"):
+            txn_dates = data["transactions"][["transaction_id", "transaction_date"]]
+            items = items.merge(txn_dates, on="transaction_id")
+            items["month"] = pd.to_datetime(items["transaction_date"]).dt.to_period("M").astype(str)
+        # Group by store (and category/month if requested)
         group_cols = ["store_id", "store_name", "city", "store_type"]
         if "category" in tool_input:
             group_cols.append("category")
+        if tool_input.get("group_by_month"):
+            group_cols.append("month")
         summary = items.groupby(group_cols).agg(
             revenue=("line_total", "sum"),
             transactions=("transaction_id", "nunique"),

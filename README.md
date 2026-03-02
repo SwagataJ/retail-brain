@@ -18,7 +18,8 @@ retail-brain/
 │   ├── predict_forecast.py    # 30-day forecast generation
 │   ├── customer_intelligence.py  # Segmentation, churn & recommendations
 │   ├── pricing_optimization.py   # Elasticity, discount & promotion timing
-│   └── ai_copilot.py             # Natural language copilot (Bedrock)
+│   ├── ai_copilot.py             # Natural language copilot (Bedrock)
+│   └── ai_copilot_app.py         # Streamlit web interface for copilot
 ├── data/
 │   ├── products.csv           # ~2,000 products across 5 categories
 │   ├── stores.csv             # ~100 stores (mall, standalone, online)
@@ -196,31 +197,40 @@ python scripts/pricing_optimization.py
 
 ## AI Copilot
 
-The AI Copilot (`scripts/ai_copilot.py`) provides a natural language CLI interface for querying all pipeline outputs. It uses AWS Bedrock (Claude) for understanding questions and generating business-friendly responses.
+The AI Copilot provides a natural language interface for querying all pipeline outputs. It uses AWS Bedrock (Claude) for understanding questions and generating business-friendly responses. Two interfaces are available: a CLI (`ai_copilot.py`) and a Streamlit web app (`ai_copilot_app.py`).
 
 ```bash
+# CLI interface
 python scripts/ai_copilot.py          # Launch the copilot
 python scripts/ai_copilot.py --debug  # Launch with debug output
+
+# Web interface
+streamlit run scripts/ai_copilot_app.py
 ```
 
 **Prerequisites:** AWS credentials configured (`aws configure` or environment variables) and `boto3` installed.
 
 **How it works:**
 
-1. **Startup** — Loads all 12 output CSVs. Small files (~350 rows total) are embedded verbatim in the system prompt. Large files (rfm_scores 100K, churn_predictions 100K, price_elasticity 2K, optimal_discounts 2K) are aggregated into ~40 summary rows.
-2. **Summary questions** — Answered directly from embedded data: "What is the forecasted revenue for Electronics next week?", "When should we run promotions for Clothing?"
-3. **Drill-down questions** — Claude calls data lookup tools to query row-level data: "What's the churn probability for customer 42?", "Show me the top 10 highest-risk Loyal customers"
-4. **Charts** — Claude emits chart directives that are rendered with matplotlib and saved to `data/copilot_charts/`
-5. **Commands** — `/help`, `/data`, `/clear`, `/export`, `/quit`
+1. **Startup** — Loads all 17 CSVs from the data directories. Small files (forecasts, segment summaries, recommendations, stores — ~450 rows total) are embedded verbatim in the system prompt. Large files (rfm_scores 100K, churn_predictions 100K, transactions 500K, daily_sales 3.6K, price_elasticity 2K, optimal_discounts 2K) are aggregated into compact summaries including monthly sales by category, RFM percentiles, churn distribution, elasticity summary, store revenue summary, and discount optimization summary.
+2. **Summary questions** — Answered directly from embedded data: "What is the forecasted revenue for Electronics next week?", "When should we run promotions for Clothing?", "Which store type generates the most revenue?"
+3. **Drill-down questions** — Claude calls data lookup tools to query row-level data: "What's the churn probability for customer 42?", "Show me the top 10 highest-risk Loyal customers", "Top stores in Dallas"
+4. **Charts** — Claude emits chart directives (bar, line, pie, scatter, heatmap) that are rendered inline in Streamlit or saved to `data/copilot_charts/` in CLI mode
+5. **Conversation persistence** — Chat history is saved to `data/copilot_history.json` and restored on restart
+6. **Commands** (CLI) — `/help`, `/data`, `/clear`, `/export`, `/quit`
 
 **Available tools for drill-down:**
 
 | Tool | Description |
 |------|-------------|
-| `lookup_customer` | Look up a specific customer by ID (RFM scores, segment, churn) |
-| `lookup_product` | Look up a specific product by ID (elasticity, optimal discount) |
+| `lookup_customer` | Look up a specific customer by ID (RFM scores, segment, churn, transaction dates) |
+| `lookup_product` | Look up a specific product by ID (elasticity, optimal discount, recommendation) |
 | `search_customers` | Filter customers by segment, churn risk, probability range |
 | `search_products` | Filter products by category, elasticity label, recommendation |
+| `search_daily_sales` | Query daily sales revenue by category and/or date range |
+| `lookup_customer_transactions` | Get a customer's spending breakdown by category or month |
+| `top_customers_by_revenue` | Find top N customers by total revenue with category breakdown |
+| `search_store_sales` | Query store-level revenue, filterable by store, city, store type, or category |
 
 **Configuration** (via environment variables):
 

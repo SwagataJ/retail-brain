@@ -64,13 +64,15 @@ CSV_MANIFEST = {
     "promotion_timing":       ("pricing_optimization", "promotion_timing.csv"),
     "cannibalization_risk":   ("pricing_optimization", "cannibalization_risk.csv"),
     "margin_impact_summary":  ("pricing_optimization", "margin_impact_summary.csv"),
+    # Stores
+    "stores":                 (".", "stores.csv"),
 }
 
 # Small CSVs embedded verbatim in the system prompt
 SMALL_CSVS = [
     "forecast_results", "segment_summary", "category_affinity",
     "recommendations", "margin_impact_summary", "discount_sensitivity",
-    "promotion_timing", "cannibalization_risk",
+    "promotion_timing", "cannibalization_risk", "stores",
 ]
 
 # Large CSVs that get pre-aggregated
@@ -201,6 +203,31 @@ def compute_aggregations(data):
         summary = summary.round(4)
         aggs["elasticity_summary"] = _df_to_csv_string(summary)
 
+    # Store-level revenue summary
+    if all(k in data for k in ("transactions", "transaction_items", "stores")):
+        items = data["transaction_items"].merge(
+            data["transactions"][["transaction_id", "store_id"]],
+            on="transaction_id",
+        )
+        items["line_total"] = (
+            items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+        )
+        store_rev = items.groupby("store_id").agg(
+            revenue=("line_total", "sum"),
+            transactions=("transaction_id", "nunique"),
+            items_sold=("quantity", "sum"),
+        ).reset_index()
+        store_rev = store_rev.merge(
+            data["stores"][["store_id", "store_name", "city", "store_type"]],
+            on="store_id",
+        )
+        store_rev["revenue"] = store_rev["revenue"].round(2)
+        store_rev = store_rev.sort_values("revenue", ascending=False)
+        aggs["store_revenue_summary"] = _df_to_csv_string(
+            store_rev[["store_id", "store_name", "city", "store_type",
+                        "revenue", "transactions", "items_sold"]]
+        )
+
     # Discount optimization summary per category
     if "optimal_discounts" in data:
         df = data["optimal_discounts"]
@@ -252,13 +279,16 @@ def build_system_prompt(data, aggregations):
     # Tool use instructions
     sections.append(
         "## Data Lookup Tools\n"
-        "For questions about specific customers, products, or daily sales, use "
-        "the provided tools to look up row-level data from the full datasets "
-        "(daily_sales: ~3,600 rows, rfm_scores: ~100K rows, churn_predictions: "
-        "~100K rows, price_elasticity: ~2K rows, optimal_discounts: ~2K rows). "
-        "The aggregated summaries above give you the big picture; the tools let "
-        "you drill into specifics. For daily sales charts, use search_daily_sales "
-        "to fetch the data, then emit a [CHART:...] directive.\n"
+        "For questions about specific customers, products, daily sales, or "
+        "store-level performance, use the provided tools to look up row-level "
+        "data from the full datasets (daily_sales: ~3,600 rows, rfm_scores: "
+        "~100K rows, churn_predictions: ~100K rows, price_elasticity: ~2K rows, "
+        "optimal_discounts: ~2K rows, stores: 100 rows). The aggregated "
+        "summaries above give you the big picture; the tools let you drill "
+        "into specifics. Use search_store_sales to answer questions about "
+        "store revenue, top-performing stores, revenue by city or store type. "
+        "For daily sales charts, use search_daily_sales to fetch the data, "
+        "then emit a [CHART:...] directive.\n"
     )
 
     # Chart rendering instructions
@@ -510,6 +540,53 @@ def build_tool_definitions():
                 },
             }
         },
+        {
+            "toolSpec": {
+                "name": "search_store_sales",
+                "description": (
+                    "Search store-level revenue breakdown. Joins transactions "
+                    "with store metadata to show revenue, transaction count, "
+                    "and items sold per store. Optionally filter by store_id, "
+                    "city, store_type, or product category."
+                ),
+                "inputSchema": {
+                    "json": {
+                        "type": "object",
+                        "properties": {
+                            "store_id": {
+                                "type": "integer",
+                                "description": "Filter by a specific store ID",
+                            },
+                            "city": {
+                                "type": "string",
+                                "description": "Filter by city (e.g. Dallas, Phoenix)",
+                            },
+                            "store_type": {
+                                "type": "string",
+                                "description": "Filter by store type (e.g. online, flagship, standard)",
+                            },
+                            "category": {
+                                "type": "string",
+                                "description": "Filter by product category (e.g. Electronics, Clothing)",
+                            },
+                            "sort_by": {
+                                "type": "string",
+                                "description": "Column to sort by (default: revenue)",
+                            },
+                            "ascending": {
+                                "type": "boolean",
+                                "description": "Sort ascending (default: false)",
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "Max rows to return (default: 20)",
+                            },
+                        },
+                        "required": [],
+                    }
+                },
+            }
+        },
     ]
     return {"tools": tools}
 
@@ -728,6 +805,52 @@ def execute_tool(tool_name, tool_input, data):
         totals.columns = ["customer_id", "grand_total"]
         summary = summary.merge(totals, on="customer_id")
         summary = summary.sort_values(["grand_total", "category"], ascending=[False, True])
+        return summary.to_json(orient="records", default_handler=str)
+
+    elif tool_name == "search_store_sales":
+        for required in ("transactions", "transaction_items", "products", "stores"):
+            if required not in data:
+                return json.dumps({"error": f"{required} data not available"})
+        # Join transactions → items → products → stores
+        items = data["transaction_items"].merge(
+            data["transactions"][["transaction_id", "store_id"]],
+            on="transaction_id",
+        )
+        items = items.merge(
+            data["products"][["product_id", "category"]], on="product_id"
+        )
+        items = items.merge(
+            data["stores"][["store_id", "store_name", "city", "store_type"]],
+            on="store_id",
+        )
+        items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"])
+        # Apply filters
+        if "store_id" in tool_input:
+            items = items[items["store_id"] == tool_input["store_id"]]
+        if "city" in tool_input:
+            items = items[items["city"].str.lower() == tool_input["city"].lower()]
+        if "store_type" in tool_input:
+            items = items[items["store_type"].str.lower() == tool_input["store_type"].lower()]
+        if "category" in tool_input:
+            items = items[items["category"].str.lower() == tool_input["category"].lower()]
+        # Group by store (and category if filtered)
+        group_cols = ["store_id", "store_name", "city", "store_type"]
+        if "category" in tool_input:
+            group_cols.append("category")
+        summary = items.groupby(group_cols).agg(
+            revenue=("line_total", "sum"),
+            transactions=("transaction_id", "nunique"),
+            items_sold=("quantity", "sum"),
+        ).reset_index().round(2)
+        # Sort
+        sort_col = tool_input.get("sort_by", "revenue")
+        if sort_col not in summary.columns:
+            sort_col = "revenue"
+        ascending = tool_input.get("ascending", False)
+        summary = summary.sort_values(sort_col, ascending=ascending)
+        # Limit
+        limit = tool_input.get("limit", 20)
+        summary = summary.head(limit)
         return summary.to_json(orient="records", default_handler=str)
 
     else:

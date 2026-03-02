@@ -49,10 +49,10 @@ LEARNING_RATE = 1e-3
 BATCH_SIZE = 32
 
 DATE_START = pd.Timestamp("2024-01-01")
-DATE_END = pd.Timestamp("2025-12-31")
-TRAIN_END = pd.Timestamp("2025-09-30")
-VAL_START = pd.Timestamp("2025-10-01")
-VAL_END = pd.Timestamp("2025-12-31")
+DATE_END = pd.Timestamp("2026-02-28")
+TRAIN_END = pd.Timestamp("2025-11-30")
+VAL_START = pd.Timestamp("2025-12-01")
+VAL_END = pd.Timestamp("2026-02-28")
 
 FUTR_EXOG_COLS = [
     "day_of_week_sin",

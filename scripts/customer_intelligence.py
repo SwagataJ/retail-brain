@@ -35,11 +35,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 SEED = 42
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 OUTPUT_DIR = os.path.join(DATA_DIR, "customer_intelligence")
-REFERENCE_DATE = pd.Timestamp("2026-01-01")
+REFERENCE_DATE = pd.Timestamp("2026-03-01")
 H1_START = pd.Timestamp("2025-01-01")
 H1_END = pd.Timestamp("2025-06-30")
 H2_START = pd.Timestamp("2025-07-01")
-H2_END = pd.Timestamp("2025-12-31")
+H2_END = pd.Timestamp("2026-02-28")
 
 np.random.seed(SEED)
 

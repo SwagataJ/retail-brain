@@ -1,61 +1,61 @@
 category,month,demand_index,promotion_score,timing_recommendation
-Beauty,1,31.6,5,Strong promotion window
-Beauty,2,36.4,5,Strong promotion window
-Beauty,3,52.9,5,Strong promotion window
-Beauty,4,58.5,5,Strong promotion window
-Beauty,5,72.2,5,Strong promotion window
-Beauty,6,82.7,5,Strong promotion window
-Beauty,7,91.6,4,Good promotion window
-Beauty,8,97.1,3,Neutral
-Beauty,9,98.1,3,Neutral
-Beauty,10,124.9,1,Avoid — high organic demand
-Beauty,11,183.3,1,Avoid — high organic demand
-Beauty,12,270.8,1,Avoid — high organic demand
-Clothing,1,32.1,5,Strong promotion window
-Clothing,2,34.9,5,Strong promotion window
-Clothing,3,52.5,5,Strong promotion window
-Clothing,4,58.8,5,Strong promotion window
-Clothing,5,73.2,5,Strong promotion window
-Clothing,6,81.5,5,Strong promotion window
-Clothing,7,92.1,4,Good promotion window
-Clothing,8,96.5,3,Neutral
-Clothing,9,99.1,3,Neutral
-Clothing,10,125.7,1,Avoid — high organic demand
-Clothing,11,182.0,1,Avoid — high organic demand
-Clothing,12,271.5,1,Avoid — high organic demand
-Electronics,1,32.7,5,Strong promotion window
-Electronics,2,36.4,5,Strong promotion window
-Electronics,3,52.5,5,Strong promotion window
-Electronics,4,58.5,5,Strong promotion window
-Electronics,5,73.6,5,Strong promotion window
-Electronics,6,82.8,5,Strong promotion window
-Electronics,7,90.9,4,Good promotion window
-Electronics,8,97.3,3,Neutral
-Electronics,9,96.9,3,Neutral
-Electronics,10,126.4,1,Avoid — high organic demand
-Electronics,11,181.7,1,Avoid — high organic demand
-Electronics,12,270.3,1,Avoid — high organic demand
-Groceries,1,31.0,5,Strong promotion window
-Groceries,2,35.4,5,Strong promotion window
-Groceries,3,52.4,5,Strong promotion window
-Groceries,4,58.5,5,Strong promotion window
-Groceries,5,73.0,5,Strong promotion window
-Groceries,6,83.3,5,Strong promotion window
-Groceries,7,92.6,4,Good promotion window
-Groceries,8,98.7,3,Neutral
-Groceries,9,98.0,3,Neutral
-Groceries,10,123.7,1,Avoid — high organic demand
-Groceries,11,182.4,1,Avoid — high organic demand
-Groceries,12,271.0,1,Avoid — high organic demand
-Home,1,31.9,5,Strong promotion window
-Home,2,35.8,5,Strong promotion window
-Home,3,52.6,5,Strong promotion window
-Home,4,58.7,5,Strong promotion window
-Home,5,73.1,5,Strong promotion window
-Home,6,81.2,5,Strong promotion window
-Home,7,90.8,4,Good promotion window
-Home,8,96.6,3,Neutral
-Home,9,97.2,3,Neutral
-Home,10,126.0,1,Avoid — high organic demand
-Home,11,183.4,1,Avoid — high organic demand
-Home,12,272.7,1,Avoid — high organic demand
+Beauty,1,119.8,1,Avoid — high organic demand
+Beauty,2,172.4,1,Avoid — high organic demand
+Beauty,3,46.7,5,Strong promotion window
+Beauty,4,53.0,5,Strong promotion window
+Beauty,5,63.2,5,Strong promotion window
+Beauty,6,71.5,5,Strong promotion window
+Beauty,7,77.2,5,Strong promotion window
+Beauty,8,80.6,5,Strong promotion window
+Beauty,9,82.9,5,Strong promotion window
+Beauty,10,101.1,3,Neutral
+Beauty,11,142.6,1,Avoid — high organic demand
+Beauty,12,189.1,1,Avoid — high organic demand
+Clothing,1,120.0,1,Avoid — high organic demand
+Clothing,2,173.0,1,Avoid — high organic demand
+Clothing,3,46.8,5,Strong promotion window
+Clothing,4,52.4,5,Strong promotion window
+Clothing,5,62.6,5,Strong promotion window
+Clothing,6,70.6,5,Strong promotion window
+Clothing,7,78.5,5,Strong promotion window
+Clothing,8,81.2,5,Strong promotion window
+Clothing,9,81.8,5,Strong promotion window
+Clothing,10,102.3,3,Neutral
+Clothing,11,143.0,1,Avoid — high organic demand
+Clothing,12,188.0,1,Avoid — high organic demand
+Electronics,1,119.1,1,Avoid — high organic demand
+Electronics,2,171.6,1,Avoid — high organic demand
+Electronics,3,46.4,5,Strong promotion window
+Electronics,4,51.9,5,Strong promotion window
+Electronics,5,63.3,5,Strong promotion window
+Electronics,6,70.3,5,Strong promotion window
+Electronics,7,77.9,5,Strong promotion window
+Electronics,8,81.6,5,Strong promotion window
+Electronics,9,81.2,5,Strong promotion window
+Electronics,10,101.5,3,Neutral
+Electronics,11,143.1,1,Avoid — high organic demand
+Electronics,12,192.0,1,Avoid — high organic demand
+Groceries,1,121.2,1,Avoid — high organic demand
+Groceries,2,172.6,1,Avoid — high organic demand
+Groceries,3,46.1,5,Strong promotion window
+Groceries,4,52.7,5,Strong promotion window
+Groceries,5,63.0,5,Strong promotion window
+Groceries,6,71.3,5,Strong promotion window
+Groceries,7,77.1,5,Strong promotion window
+Groceries,8,82.4,5,Strong promotion window
+Groceries,9,81.0,5,Strong promotion window
+Groceries,10,103.6,3,Neutral
+Groceries,11,141.8,1,Avoid — high organic demand
+Groceries,12,187.2,1,Avoid — high organic demand
+Home,1,122.0,1,Avoid — high organic demand
+Home,2,172.7,1,Avoid — high organic demand
+Home,3,47.0,5,Strong promotion window
+Home,4,52.0,5,Strong promotion window
+Home,5,62.9,5,Strong promotion window
+Home,6,71.1,5,Strong promotion window
+Home,7,77.9,5,Strong promotion window
+Home,8,79.7,5,Strong promotion window
+Home,9,80.6,5,Strong promotion window
+Home,10,102.3,3,Neutral
+Home,11,143.1,1,Avoid — high organic demand
+Home,12,188.6,1,Avoid — high organic demand

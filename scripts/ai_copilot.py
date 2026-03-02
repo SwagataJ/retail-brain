@@ -218,13 +218,13 @@ def compute_aggregations(data):
             items_sold=("quantity", "sum"),
         ).reset_index()
         store_rev = store_rev.merge(
-            data["stores"][["store_id", "store_name", "city", "store_type"]],
+            data["stores"][["store_id", "store_name", "city", "state", "store_type"]],
             on="store_id",
         )
         store_rev["revenue"] = store_rev["revenue"].round(2)
         store_rev = store_rev.sort_values("revenue", ascending=False)
         aggs["store_revenue_summary"] = _df_to_csv_string(
-            store_rev[["store_id", "store_name", "city", "store_type",
+            store_rev[["store_id", "store_name", "city", "state", "store_type",
                         "revenue", "transactions", "items_sold"]]
         )
 
@@ -257,7 +257,7 @@ def build_system_prompt(data, aggregations):
         "You are Retail Brain Copilot, an AI assistant for business users.\n"
         "Answer questions using ONLY the data provided below. If the data is "
         "insufficient to answer a question, say so clearly.\n"
-        "Use business-friendly language. Format currency with $ and commas. "
+        "Use business-friendly language. Format currency with ₹ and commas. "
         "Format percentages to one decimal place. Cite the dataset name when "
         "referencing data."
     )
@@ -548,7 +548,7 @@ def build_tool_definitions():
                     "Search store-level revenue breakdown. Joins transactions "
                     "with store metadata to show revenue, transaction count, "
                     "and items sold per store. Optionally filter by store_id, "
-                    "city, store_type, or product category. Use group_by_month "
+                    "city, state, store_type, or product category. Use group_by_month "
                     "to get a monthly time-series breakdown."
                 ),
                 "inputSchema": {
@@ -561,7 +561,11 @@ def build_tool_definitions():
                             },
                             "city": {
                                 "type": "string",
-                                "description": "Filter by city (e.g. Dallas, Phoenix)",
+                                "description": "Filter by city (e.g. Mumbai, Delhi)",
+                            },
+                            "state": {
+                                "type": "string",
+                                "description": "Filter by state (e.g. Maharashtra, Karnataka)",
                             },
                             "store_type": {
                                 "type": "string",
@@ -826,7 +830,7 @@ def execute_tool(tool_name, tool_input, data):
             data["products"][["product_id", "category"]], on="product_id"
         )
         items = items.merge(
-            data["stores"][["store_id", "store_name", "city", "store_type"]],
+            data["stores"][["store_id", "store_name", "city", "state", "store_type"]],
             on="store_id",
         )
         items["line_total"] = items["quantity"] * items["unit_price"] * (1 - items["discount_pct"] / 100)
@@ -835,6 +839,8 @@ def execute_tool(tool_name, tool_input, data):
             items = items[items["store_id"] == tool_input["store_id"]]
         if "city" in tool_input:
             items = items[items["city"].str.lower() == tool_input["city"].lower()]
+        if "state" in tool_input:
+            items = items[items["state"].str.lower() == tool_input["state"].lower()]
         if "store_type" in tool_input:
             items = items[items["store_type"].str.lower() == tool_input["store_type"].lower()]
         if "category" in tool_input:
@@ -845,7 +851,7 @@ def execute_tool(tool_name, tool_input, data):
             items = items.merge(txn_dates, on="transaction_id")
             items["month"] = pd.to_datetime(items["transaction_date"]).dt.to_period("M").astype(str)
         # Group by store (and category/month if requested)
-        group_cols = ["store_id", "store_name", "city", "store_type"]
+        group_cols = ["store_id", "store_name", "city", "state", "store_type"]
         if "category" in tool_input:
             group_cols.append("category")
         if tool_input.get("group_by_month"):

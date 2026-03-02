@@ -34,10 +34,10 @@ NUM_TRANSACTIONS = 500_000
 AVG_ITEMS_PER_TXN = 2.4  # targets ~1.2M line items
 
 DATE_START = pd.Timestamp("2024-01-01")
-DATE_END = pd.Timestamp("2025-12-31")
+DATE_END = pd.Timestamp("2026-02-28")
 
 np.random.seed(SEED)
-fake = Faker()
+fake = Faker("en_IN")
 Faker.seed(SEED)
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -46,50 +46,66 @@ CATEGORY_CONFIG = {
     "Electronics": {
         "subcategories": ["Laptops", "Smartphones", "Headphones", "Tablets", "Cameras"],
         "brands": ["TechNova", "PixelPro", "VoltEdge", "ClearView", "ByteWave"],
-        "price_range": (50, 1500),
+        "price_range": (4000, 125000),
         "margin": (0.10, 0.25),
         "elasticity": "high",
     },
     "Clothing": {
         "subcategories": ["T-Shirts", "Jeans", "Dresses", "Sneakers", "Jackets"],
         "brands": ["UrbanThread", "FitForm", "StreetPulse", "CozyKnit", "LuxWear"],
-        "price_range": (15, 200),
+        "price_range": (1200, 17000),
         "margin": (0.40, 0.60),
         "elasticity": "medium",
     },
     "Groceries": {
         "subcategories": ["Snacks", "Beverages", "Dairy", "Bakery", "Frozen"],
         "brands": ["FreshFarm", "NatureBite", "DailyHarvest", "PureBasics", "GreenLeaf"],
-        "price_range": (2, 30),
+        "price_range": (150, 2500),
         "margin": (0.15, 0.30),
         "elasticity": "low",
     },
     "Home": {
         "subcategories": ["Furniture", "Kitchenware", "Bedding", "Lighting", "Decor"],
         "brands": ["NestCraft", "HomeEase", "CozyDen", "BrightSpace", "TimberLux"],
-        "price_range": (10, 500),
+        "price_range": (800, 42000),
         "margin": (0.30, 0.50),
         "elasticity": "medium",
     },
     "Beauty": {
         "subcategories": ["Skincare", "Haircare", "Makeup", "Fragrance", "Shampoo"],
         "brands": ["GlowUp", "VelvetSkin", "PureRadiance", "BloomBeauty", "SilkEssence"],
-        "price_range": (5, 120),
+        "price_range": (400, 10000),
         "margin": (0.50, 0.70),
         "elasticity": "medium",
     },
 }
 
-CITIES = [
-    "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
-    "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
-    "Austin", "Jacksonville", "Fort Worth", "Columbus", "Charlotte",
-    "Indianapolis", "Seattle", "Denver", "Boston", "Nashville",
-]
+CITIES = {
+    "Mumbai": "Maharashtra",
+    "Delhi": "Delhi",
+    "Bangalore": "Karnataka",
+    "Hyderabad": "Telangana",
+    "Chennai": "Tamil Nadu",
+    "Kolkata": "West Bengal",
+    "Pune": "Maharashtra",
+    "Ahmedabad": "Gujarat",
+    "Jaipur": "Rajasthan",
+    "Lucknow": "Uttar Pradesh",
+    "Chandigarh": "Punjab",
+    "Kochi": "Kerala",
+    "Indore": "Madhya Pradesh",
+    "Coimbatore": "Tamil Nadu",
+    "Nagpur": "Maharashtra",
+    "Bhopal": "Madhya Pradesh",
+    "Patna": "Bihar",
+    "Surat": "Gujarat",
+    "Visakhapatnam": "Andhra Pradesh",
+    "Thiruvananthapuram": "Kerala",
+}
 
 STORE_NAMES_PREFIX = [
-    "MegaMart", "ShopEasy", "ValueHub", "PrimeMall", "QuickStop",
-    "CityCenter", "DailyNeeds", "TrendZone", "SmartBuy", "FreshMarket",
+    "BigBazaar", "DMart", "Reliance", "StarBazaar", "MoreMegastore",
+    "SpencersMart", "EasyDay", "SaravanaStores", "VMarket", "CityMart",
 ]
 
 SEGMENT_DISTRIBUTION = {
@@ -147,15 +163,18 @@ def generate_customers() -> pd.DataFrame:
             d = fake.date_between(start_date=DATE_START, end_date=DATE_END)
         signup_dates.append(d)
 
+    city_names = list(CITIES.keys())
     rows = []
     for i in range(NUM_CUSTOMERS):
+        city = np.random.choice(city_names)
         rows.append({
             "customer_id": i + 1,
             "name": fake.name(),
             "email": fake.unique.email(),
             "age": np.random.randint(18, 76),
             "gender": np.random.choice(["M", "F", "Other"], p=[0.45, 0.45, 0.10]),
-            "city": np.random.choice(CITIES),
+            "city": city,
+            "state": CITIES[city],
             "signup_date": signup_dates[i],
             "segment_label": segments[i],
         })
@@ -165,16 +184,18 @@ def generate_customers() -> pd.DataFrame:
 
 def generate_stores() -> pd.DataFrame:
     print("Generating stores...")
+    city_names = list(CITIES.keys())
     rows = []
     store_types = ["mall", "standalone", "online"]
     for i in range(NUM_STORES):
         prefix = np.random.choice(STORE_NAMES_PREFIX)
-        city = np.random.choice(CITIES)
+        city = np.random.choice(city_names)
         stype = np.random.choice(store_types, p=[0.30, 0.40, 0.30])
         rows.append({
             "store_id": i + 1,
             "store_name": f"{prefix} {city} #{i + 1}",
             "city": city,
+            "state": CITIES[city],
             "store_type": stype,
         })
     return pd.DataFrame(rows)

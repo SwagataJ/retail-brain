@@ -1,101 +1,101 @@
-store_id,store_name,city,store_type
-1,ShopEasy Dallas #1,Dallas,online
-2,DailyNeeds Phoenix #2,Phoenix,online
-3,CityCenter San Antonio #3,San Antonio,online
-4,PrimeMall Boston #4,Boston,mall
-5,PrimeMall Seattle #5,Seattle,online
-6,PrimeMall San Jose #6,San Jose,online
-7,DailyNeeds Houston #7,Houston,standalone
-8,ValueHub Austin #8,Austin,standalone
-9,TrendZone Indianapolis #9,Indianapolis,mall
-10,ValueHub Columbus #10,Columbus,standalone
-11,ShopEasy San Diego #11,San Diego,mall
-12,CityCenter Denver #12,Denver,standalone
-13,ValueHub Chicago #13,Chicago,standalone
-14,PrimeMall New York #14,New York,online
-15,TrendZone San Antonio #15,San Antonio,online
-16,QuickStop Austin #16,Austin,mall
-17,CityCenter Indianapolis #17,Indianapolis,standalone
-18,TrendZone Denver #18,Denver,online
-19,QuickStop Houston #19,Houston,mall
-20,ShopEasy Philadelphia #20,Philadelphia,mall
-21,DailyNeeds Nashville #21,Nashville,standalone
-22,MegaMart San Jose #22,San Jose,standalone
-23,FreshMarket Phoenix #23,Phoenix,mall
-24,FreshMarket Seattle #24,Seattle,standalone
-25,DailyNeeds Boston #25,Boston,online
-26,ValueHub Nashville #26,Nashville,standalone
-27,QuickStop Charlotte #27,Charlotte,mall
-28,FreshMarket Los Angeles #28,Los Angeles,standalone
-29,ValueHub Nashville #29,Nashville,standalone
-30,MegaMart Chicago #30,Chicago,standalone
-31,CityCenter San Diego #31,San Diego,online
-32,FreshMarket Fort Worth #32,Fort Worth,mall
-33,SmartBuy Fort Worth #33,Fort Worth,online
-34,FreshMarket Los Angeles #34,Los Angeles,online
-35,FreshMarket Philadelphia #35,Philadelphia,standalone
-36,TrendZone Jacksonville #36,Jacksonville,mall
-37,PrimeMall Boston #37,Boston,standalone
-38,QuickStop Austin #38,Austin,mall
-39,SmartBuy Fort Worth #39,Fort Worth,standalone
-40,TrendZone Houston #40,Houston,standalone
-41,CityCenter Denver #41,Denver,mall
-42,PrimeMall Houston #42,Houston,mall
-43,DailyNeeds Seattle #43,Seattle,mall
-44,TrendZone Jacksonville #44,Jacksonville,standalone
-45,QuickStop Seattle #45,Seattle,online
-46,MegaMart Charlotte #46,Charlotte,standalone
-47,PrimeMall Nashville #47,Nashville,online
-48,TrendZone Columbus #48,Columbus,online
-49,FreshMarket Boston #49,Boston,standalone
-50,ShopEasy Seattle #50,Seattle,mall
-51,SmartBuy Chicago #51,Chicago,standalone
-52,TrendZone San Diego #52,San Diego,mall
-53,ValueHub Philadelphia #53,Philadelphia,online
-54,ShopEasy Fort Worth #54,Fort Worth,online
-55,ValueHub Los Angeles #55,Los Angeles,standalone
-56,FreshMarket San Diego #56,San Diego,mall
-57,DailyNeeds Los Angeles #57,Los Angeles,standalone
-58,TrendZone Philadelphia #58,Philadelphia,standalone
-59,PrimeMall Nashville #59,Nashville,standalone
-60,FreshMarket Boston #60,Boston,online
-61,ValueHub Dallas #61,Dallas,online
-62,ShopEasy San Antonio #62,San Antonio,mall
-63,CityCenter Columbus #63,Columbus,mall
-64,DailyNeeds New York #64,New York,mall
-65,ValueHub Austin #65,Austin,online
-66,ShopEasy Dallas #66,Dallas,standalone
-67,ValueHub Dallas #67,Dallas,online
-68,CityCenter Charlotte #68,Charlotte,standalone
-69,PrimeMall San Antonio #69,San Antonio,online
-70,CityCenter Nashville #70,Nashville,mall
-71,FreshMarket Fort Worth #71,Fort Worth,online
-72,QuickStop Phoenix #72,Phoenix,mall
-73,CityCenter Seattle #73,Seattle,online
-74,CityCenter Denver #74,Denver,online
-75,TrendZone Charlotte #75,Charlotte,mall
-76,FreshMarket Houston #76,Houston,standalone
-77,ShopEasy New York #77,New York,mall
-78,MegaMart New York #78,New York,online
-79,CityCenter Columbus #79,Columbus,mall
-80,FreshMarket San Jose #80,San Jose,mall
-81,DailyNeeds New York #81,New York,standalone
-82,ShopEasy Dallas #82,Dallas,standalone
-83,SmartBuy San Diego #83,San Diego,standalone
-84,SmartBuy Chicago #84,Chicago,standalone
-85,CityCenter Denver #85,Denver,online
-86,CityCenter Charlotte #86,Charlotte,standalone
-87,QuickStop Fort Worth #87,Fort Worth,standalone
-88,CityCenter Columbus #88,Columbus,mall
-89,PrimeMall Austin #89,Austin,online
-90,FreshMarket Austin #90,Austin,online
-91,TrendZone Fort Worth #91,Fort Worth,standalone
-92,TrendZone Chicago #92,Chicago,mall
-93,TrendZone Charlotte #93,Charlotte,online
-94,ValueHub Houston #94,Houston,online
-95,ShopEasy Charlotte #95,Charlotte,mall
-96,FreshMarket Philadelphia #96,Philadelphia,online
-97,TrendZone Boston #97,Boston,mall
-98,CityCenter Seattle #98,Seattle,mall
-99,ValueHub Columbus #99,Columbus,standalone
-100,TrendZone Houston #100,Houston,standalone
+store_id,store_name,city,state,store_type
+1,StarBazaar Delhi #1,Delhi,Delhi,online
+2,BigBazaar Chennai #2,Chennai,Tamil Nadu,online
+3,SpencersMart Pune #3,Pune,Maharashtra,online
+4,StarBazaar Visakhapatnam #4,Visakhapatnam,Andhra Pradesh,mall
+5,StarBazaar Patna #5,Patna,Bihar,online
+6,StarBazaar Lucknow #6,Lucknow,Uttar Pradesh,online
+7,EasyDay Hyderabad #7,Hyderabad,Telangana,standalone
+8,Reliance Chandigarh #8,Chandigarh,Punjab,standalone
+9,SaravanaStores Bhopal #9,Bhopal,Madhya Pradesh,mall
+10,Reliance Coimbatore #10,Coimbatore,Tamil Nadu,standalone
+11,DMart Ahmedabad #11,Ahmedabad,Gujarat,mall
+12,SpencersMart Surat #12,Surat,Gujarat,standalone
+13,Reliance Bangalore #13,Bangalore,Karnataka,standalone
+14,StarBazaar Mumbai #14,Mumbai,Maharashtra,online
+15,SaravanaStores Pune #15,Pune,Maharashtra,online
+16,MoreMegastore Chandigarh #16,Chandigarh,Punjab,mall
+17,SpencersMart Bhopal #17,Bhopal,Madhya Pradesh,standalone
+18,SaravanaStores Surat #18,Surat,Gujarat,online
+19,MoreMegastore Hyderabad #19,Hyderabad,Telangana,mall
+20,DMart Kolkata #20,Kolkata,West Bengal,mall
+21,EasyDay Thiruvananthapuram #21,Thiruvananthapuram,Kerala,standalone
+22,BigBazaar Lucknow #22,Lucknow,Uttar Pradesh,standalone
+23,CityMart Chennai #23,Chennai,Tamil Nadu,mall
+24,CityMart Patna #24,Patna,Bihar,standalone
+25,EasyDay Visakhapatnam #25,Visakhapatnam,Andhra Pradesh,online
+26,Reliance Thiruvananthapuram #26,Thiruvananthapuram,Kerala,standalone
+27,MoreMegastore Nagpur #27,Nagpur,Maharashtra,mall
+28,CityMart Delhi #28,Delhi,Delhi,standalone
+29,Reliance Thiruvananthapuram #29,Thiruvananthapuram,Kerala,standalone
+30,BigBazaar Bangalore #30,Bangalore,Karnataka,standalone
+31,SpencersMart Ahmedabad #31,Ahmedabad,Gujarat,online
+32,CityMart Indore #32,Indore,Madhya Pradesh,mall
+33,VMarket Indore #33,Indore,Madhya Pradesh,online
+34,CityMart Delhi #34,Delhi,Delhi,online
+35,CityMart Kolkata #35,Kolkata,West Bengal,standalone
+36,SaravanaStores Kochi #36,Kochi,Kerala,mall
+37,StarBazaar Visakhapatnam #37,Visakhapatnam,Andhra Pradesh,standalone
+38,MoreMegastore Chandigarh #38,Chandigarh,Punjab,mall
+39,VMarket Indore #39,Indore,Madhya Pradesh,standalone
+40,SaravanaStores Hyderabad #40,Hyderabad,Telangana,standalone
+41,SpencersMart Surat #41,Surat,Gujarat,mall
+42,StarBazaar Hyderabad #42,Hyderabad,Telangana,mall
+43,EasyDay Patna #43,Patna,Bihar,mall
+44,SaravanaStores Kochi #44,Kochi,Kerala,standalone
+45,MoreMegastore Patna #45,Patna,Bihar,online
+46,BigBazaar Nagpur #46,Nagpur,Maharashtra,standalone
+47,StarBazaar Thiruvananthapuram #47,Thiruvananthapuram,Kerala,online
+48,SaravanaStores Coimbatore #48,Coimbatore,Tamil Nadu,online
+49,CityMart Visakhapatnam #49,Visakhapatnam,Andhra Pradesh,standalone
+50,DMart Patna #50,Patna,Bihar,mall
+51,VMarket Bangalore #51,Bangalore,Karnataka,standalone
+52,SaravanaStores Ahmedabad #52,Ahmedabad,Gujarat,mall
+53,Reliance Kolkata #53,Kolkata,West Bengal,online
+54,DMart Indore #54,Indore,Madhya Pradesh,online
+55,Reliance Delhi #55,Delhi,Delhi,standalone
+56,CityMart Ahmedabad #56,Ahmedabad,Gujarat,mall
+57,EasyDay Delhi #57,Delhi,Delhi,standalone
+58,SaravanaStores Kolkata #58,Kolkata,West Bengal,standalone
+59,StarBazaar Thiruvananthapuram #59,Thiruvananthapuram,Kerala,standalone
+60,CityMart Visakhapatnam #60,Visakhapatnam,Andhra Pradesh,online
+61,Reliance Jaipur #61,Jaipur,Rajasthan,online
+62,DMart Pune #62,Pune,Maharashtra,mall
+63,SpencersMart Coimbatore #63,Coimbatore,Tamil Nadu,mall
+64,EasyDay Mumbai #64,Mumbai,Maharashtra,mall
+65,Reliance Chandigarh #65,Chandigarh,Punjab,online
+66,DMart Jaipur #66,Jaipur,Rajasthan,standalone
+67,Reliance Jaipur #67,Jaipur,Rajasthan,online
+68,SpencersMart Nagpur #68,Nagpur,Maharashtra,standalone
+69,StarBazaar Pune #69,Pune,Maharashtra,online
+70,SpencersMart Thiruvananthapuram #70,Thiruvananthapuram,Kerala,mall
+71,CityMart Indore #71,Indore,Madhya Pradesh,online
+72,MoreMegastore Chennai #72,Chennai,Tamil Nadu,mall
+73,SpencersMart Patna #73,Patna,Bihar,online
+74,SpencersMart Surat #74,Surat,Gujarat,online
+75,SaravanaStores Nagpur #75,Nagpur,Maharashtra,mall
+76,CityMart Hyderabad #76,Hyderabad,Telangana,standalone
+77,DMart Mumbai #77,Mumbai,Maharashtra,mall
+78,BigBazaar Mumbai #78,Mumbai,Maharashtra,online
+79,SpencersMart Coimbatore #79,Coimbatore,Tamil Nadu,mall
+80,CityMart Lucknow #80,Lucknow,Uttar Pradesh,mall
+81,EasyDay Mumbai #81,Mumbai,Maharashtra,standalone
+82,DMart Jaipur #82,Jaipur,Rajasthan,standalone
+83,VMarket Ahmedabad #83,Ahmedabad,Gujarat,standalone
+84,VMarket Bangalore #84,Bangalore,Karnataka,standalone
+85,SpencersMart Surat #85,Surat,Gujarat,online
+86,SpencersMart Nagpur #86,Nagpur,Maharashtra,standalone
+87,MoreMegastore Indore #87,Indore,Madhya Pradesh,standalone
+88,SpencersMart Coimbatore #88,Coimbatore,Tamil Nadu,mall
+89,StarBazaar Chandigarh #89,Chandigarh,Punjab,online
+90,CityMart Chandigarh #90,Chandigarh,Punjab,online
+91,SaravanaStores Indore #91,Indore,Madhya Pradesh,standalone
+92,SaravanaStores Bangalore #92,Bangalore,Karnataka,mall
+93,SaravanaStores Nagpur #93,Nagpur,Maharashtra,online
+94,Reliance Hyderabad #94,Hyderabad,Telangana,online
+95,DMart Nagpur #95,Nagpur,Maharashtra,mall
+96,CityMart Kolkata #96,Kolkata,West Bengal,online
+97,SaravanaStores Visakhapatnam #97,Visakhapatnam,Andhra Pradesh,mall
+98,SpencersMart Patna #98,Patna,Bihar,mall
+99,Reliance Coimbatore #99,Coimbatore,Tamil Nadu,standalone
+100,SaravanaStores Hyderabad #100,Hyderabad,Telangana,standalone

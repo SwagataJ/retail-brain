@@ -168,6 +168,7 @@ if user_input := st.chat_input("Ask about your data..."):
 
     # Call Bedrock with streaming
     with st.chat_message("assistant"):
+        stream_placeholder = st.empty()
         try:
             stream = call_claude_stream(
                 st.session_state.client,
@@ -177,7 +178,16 @@ if user_input := st.chat_input("Ask about your data..."):
                 user_input,
                 st.session_state.data,
             )
-            full_response = st.write_stream(stream)
+            full_response = ""
+            for chunk in stream:
+                full_response += chunk
+                # Strip complete [CHART:...] blocks
+                display_text, _ = extract_chart_directives(full_response)
+                # Also hide any partial [CHART: block that hasn't closed yet
+                if "[CHART:" in display_text:
+                    display_text = display_text[:display_text.index("[CHART:")]
+                stream_placeholder.markdown(display_text + "▌")
+            stream_placeholder.empty()
         except Exception as exc:
             st.error(f"Error calling Bedrock: {exc}")
             full_response = None
@@ -186,14 +196,13 @@ if user_input := st.chat_input("Ask about your data..."):
             # Extract charts and clean text
             clean_text, chart_specs = extract_chart_directives(full_response)
 
-            # If chart directives were stripped, re-render the cleaned text
-            if chart_specs:
-                st.markdown(clean_text)
-                for spec in chart_specs:
-                    fig = render_chart(spec, 0, save=False)
-                    if fig:
-                        st.pyplot(fig)
-                        plt.close(fig)
+            st.markdown(clean_text)
+
+            for spec in chart_specs:
+                fig = render_chart(spec, 0, save=False)
+                if fig:
+                    st.pyplot(fig)
+                    plt.close(fig)
 
             # Store specs (not fig objects) so they survive reruns
             st.session_state.chat_display.append(

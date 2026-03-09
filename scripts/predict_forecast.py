@@ -27,7 +27,7 @@ MODEL_DIR = os.path.join(ROOT, "models", "nbeats_model")
 
 # ── Config ────────────────────────────────────────────────────────────────────
 HORIZON = 30
-FORECAST_START = pd.Timestamp("2026-01-01")
+FORECAST_START = pd.Timestamp("2026-03-01")
 CATEGORIES = ["Beauty", "Clothing", "Electronics", "Groceries", "Home"]
 
 FUTR_EXOG_COLS = [
@@ -110,7 +110,7 @@ def main():
 
     # Print summary table
     print("\n" + "=" * 65)
-    print("30-DAY FORECAST SUMMARY (Jan 2026)")
+    print(f"30-DAY FORECAST SUMMARY ({FORECAST_START.strftime('%b %Y')})")
     print("=" * 65)
     print(f"{'Category':<15} {'Total Rev':>12} {'Daily Avg':>12} {'Min Day':>10} {'Max Day':>10}")
     print("-" * 59)
